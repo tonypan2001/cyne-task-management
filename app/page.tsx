@@ -63,72 +63,76 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="font-black uppercase tracking-widest text-[10px] italic">Syncing Board...</p>
+        <p className="font-black uppercase tracking-widest text-[10px] italic font-sans">Syncing Board...</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto space-y-12 pb-20 animate-in fade-in duration-700 px-4 md:px-8">
+    <div className="max-w-[1440px] mx-auto space-y-10 pb-20 animate-in fade-in duration-700 px-4 md:px-8">
 
-      {/* 3. Page Header */}
+      {/* 3. Page Header (ปรับให้เหลือแค่หัวข้อและปุ่มเพิ่มงาน) */}
       <PageHeader
         title="Control Center"
         subtitle={`Urgent: ${groupedTasks.urgent.length} / Total Active: ${groupedTasks.urgent.length + groupedTasks.stream.length}`}
         icon={<LayoutGrid size={16} />}
       >
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative w-full md:w-72 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={16} />
-            <input
-              type="text"
-              placeholder="Search assets..."
-              className="w-full pl-12 pr-4 py-3 bg-white rounded-2xl border-none shadow-xl shadow-slate-200/40 outline-none font-bold text-xs focus:ring-4 focus:ring-blue-500/5 transition-all"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <Link href="/create" className="bg-slate-900 text-white p-3 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-lg active:scale-95">
-            <Plus size={20} />
-          </Link>
-        </div>
+        <Link
+          href="/create"
+          className="bg-slate-900 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2.5 hover:bg-blue-600 transition-all shadow-lg active:scale-95 shrink-0"
+        >
+          <Plus size={20} />
+          <span className="text-[11px] font-black uppercase tracking-widest">New Task</span>
+        </Link>
       </PageHeader>
 
       {/* 4. Weekly Calendar */}
       <WeeklyCalendar tasks={tasks} />
 
-      {/* 5. Project Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <div className="bg-slate-100 p-2.5 rounded-xl text-slate-400 mr-1 shrink-0">
-          <Filter size={16} />
-        </div>
-
-        <button
-          onClick={() => setActiveProjectId('All')}
-          className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeProjectId === 'All'
-            ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-            : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
-            }`}
-        >
-          All
-        </button>
-
-        {projects.map((project) => (
+      {/* 5. Filter & Search Section ✨ ย้ายมาไว้ด้วยกันตรงนี้ค่ะ */}
+      <div className="space-y-4">
+        {/* Project Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="bg-slate-100 p-2.5 rounded-xl text-slate-400 mr-1 shrink-0">
+            <Filter size={16} />
+          </div>
           <button
-            key={project.id}
-            onClick={() => setActiveProjectId(project.id)}
-            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeProjectId === project.id
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+            onClick={() => setActiveProjectId('All')}
+            className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeProjectId === 'All'
+              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
               : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
               }`}
           >
-            {project.name}
+            All
           </button>
-        ))}
+          {projects.map((project) => (
+            <button
+              key={project.id}
+              onClick={() => setActiveProjectId(project.id)}
+              className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeProjectId === project.id
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
+                }`}
+            >
+              {project.name}
+            </button>
+          ))}
+        </div>
+
+        {/* ✨ Search Bar - ย้ายมาอยู่ใต้ Filter แล้วนะค๊ะ */}
+        <div className="relative w-full max-w-md group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={14} />
+          <input
+            type="text"
+            placeholder="Quick search assets or assignee..."
+            className="w-full pl-10 pr-4 py-3 bg-white/60 rounded-xl border border-slate-100 shadow-sm outline-none font-bold text-[11px] focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-blue-200 transition-all placeholder:text-slate-300"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* 6. 🔥 URGENT SECTION (4 Columns) */}
+      {/* 6. 🔥 URGENT SECTION */}
       {groupedTasks.urgent.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center gap-3">
@@ -145,7 +149,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      {/* 7. 📋 WORK STREAM (4 Columns) */}
+      {/* 7. 📋 WORK STREAM */}
       <section className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md">
@@ -167,7 +171,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* 8. ✅ RECENTLY FINISHED (5 Columns) */}
+      {/* 8. ✅ RECENTLY FINISHED */}
       {groupedTasks.finished.length > 0 && (
         <section className="pt-8 border-t border-slate-100 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
           <div className="flex items-center gap-3 mb-6">
