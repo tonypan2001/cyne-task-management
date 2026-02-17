@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import NextImage from 'next/image'
-import { Calendar, CheckCircle2, Clock } from 'lucide-react'
+import { Calendar, CheckCircle2, Clock} from 'lucide-react'
+import Link from 'next/link'
 
 interface Task {
   id: string
@@ -25,7 +26,7 @@ export default function DashboardPage() {
         .from('tasks')
         .select('*')
         .order('created_at', { ascending: false })
-      
+
       if (!error && data) setTasks(data)
       setLoading(false)
     }
@@ -52,8 +53,8 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tasks.map((task) => (
-            <div 
-              key={task.id} 
+            <div
+              key={task.id}
               className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/30 hover:shadow-blue-100 transition-all group"
             >
               {/* Task Image */}
@@ -84,7 +85,10 @@ export default function DashboardPage() {
                     <Clock size={14} />
                     <span>รอคอย</span>
                   </div>
-                  <button className="text-blue-500 hover:text-blue-700 text-xs font-bold">ดูรายละเอียด →</button>
+                  {/* <button className="text-blue-500 hover:text-blue-700 text-xs font-bold">ดูรายละเอียด →</button> */}
+                  <Link href={`/task/${task.id}`} className="text-blue-500 hover:text-blue-700 text-xs font-bold transition-all">
+                    ดูรายละเอียด →
+                  </Link>
                 </div>
               </div>
             </div>
