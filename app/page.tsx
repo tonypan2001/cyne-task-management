@@ -160,7 +160,7 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {groupedTasks.urgent.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} projects={projects} />
             ))}
           </div>
         </section>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
         {groupedTasks.stream.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {groupedTasks.stream.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} projects={projects} />
             ))}
           </div>
         ) : (
@@ -199,7 +199,7 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {groupedTasks.finished.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} projects={projects} />
             ))}
           </div>
         </section>
