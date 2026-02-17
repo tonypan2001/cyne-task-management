@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertCircle, ChevronRight } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import { Task, Project } from '@/types/task'
 import { TaskCard } from '@/components/task/TaskCard'
 
