@@ -11,6 +11,7 @@ import { TaskCard } from '@/components/task/TaskCard'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 import { MonthlyGoals } from '@/components/dashboard/MonthlyGoals'
+import { OverdueSection } from '@/components/dashboard/OverdueSection'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -45,6 +46,27 @@ export default function DashboardPage() {
     }
     fetchData()
   }, [supabase])
+
+  const overdueTasks = useMemo(() => {
+    // สร้างวันที่วันนี้ตอน 00:00:00
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+  
+    return tasks.filter(t => {
+      // ต้องยังไม่เสร็จ
+      if (t.is_completed) return false;
+      // ถ้าไม่มี due_date ให้ถือว่าเป็นงานไม่มีกำหนด (ไม่ Overdue)
+      if (!t.due_date) return false;
+  
+      // แปลงวันที่จาก DB (YYYY-MM-DD) ให้เป็น Date Object แบบไม่สน Timezone
+      const [year, month, day] = t.due_date.split('-').map(Number);
+      const taskDate = new Date(year, month - 1, day);
+      
+      return taskDate < today;
+    });
+  }, [tasks]);
+
+  
 
   // --- 2. Grouping & Filtering Logic ---
   const groupedTasks = useMemo(() => {
@@ -90,6 +112,11 @@ export default function DashboardPage() {
       </PageHeader>
 
       <MonthlyGoals tasks={tasks} projects={projects} currentReferenceDate={referenceDate} />
+
+      <OverdueSection
+        tasks={overdueTasks}
+        projects={projects}
+      />
 
       {/* 4. Weekly Calendar */}
       <WeeklyCalendar
