@@ -63,7 +63,8 @@ export default function EditTaskPage() {
                     description: formData.description,
                     project_id: formData.selectedProjectId,
                     assignee_name: formData.assigneeName,
-                    due_date: formData.due_date // 💾 บันทึกวันที่ใหม่ (หรือวันเดิม) ลงไปค่ะ
+                    due_date: formData.due_date, // 💾 บันทึกวันที่ใหม่ (หรือวันเดิม) ลงไปค่ะ
+                    priority: formData.priority
                 })
                 .eq('id', id)
 
