@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Task } from '@/types/task'
 import Link from 'next/link'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 
 interface WeeklyCalendarProps {
     tasks: Task[]
+    referenceDate: Date // ✨ รับมาจาก Page
+    onDateChange: (date: Date) => void // ✨ ฟังก์ชันส่งค่ากลับไป Page
 }
 
 const getDayColor = (dayIndex: number) => {
@@ -24,11 +26,9 @@ const getDayColor = (dayIndex: number) => {
 
 const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3 }
 
-export const WeeklyCalendar = ({ tasks }: WeeklyCalendarProps) => {
-    // ✨ State สำหรับเก็บวันที่อ้างอิงของสัปดาห์ที่กำลังดูอยู่
-    const [referenceDate, setReferenceDate] = useState(new Date())
+export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCalendarProps) => {
 
-    // ✨ ฟังก์ชันคำนวณวันทั้ง 7 ของสัปดาห์ตาม referenceDate
+    // ✨ คำนวณวันทั้ง 7 โดยอ้างอิงจาก referenceDate ที่ได้รับมาจาก Props
     const days = useMemo(() => {
         const d = new Date(referenceDate)
         const day = d.getDay()
@@ -42,20 +42,20 @@ export const WeeklyCalendar = ({ tasks }: WeeklyCalendarProps) => {
         })
     }, [referenceDate])
 
-    // ✨ Handlers สำหรับเลื่อนสัปดาห์
+    // ✨ Handlers สำหรับเลื่อนสัปดาห์ (ส่งค่ากลับไป Update ที่หน้า Page)
     const nextWeek = () => {
         const next = new Date(referenceDate)
         next.setDate(next.getDate() + 7)
-        setReferenceDate(next)
+        onDateChange(next)
     }
 
     const prevWeek = () => {
         const prev = new Date(referenceDate)
         prev.setDate(prev.getDate() - 7)
-        setReferenceDate(prev)
+        onDateChange(prev)
     }
 
-    const resetToToday = () => setReferenceDate(new Date())
+    const resetToToday = () => onDateChange(new Date())
 
     return (
         <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-2xl shadow-slate-200/40 animate-in fade-in duration-700">
@@ -100,8 +100,8 @@ export const WeeklyCalendar = ({ tasks }: WeeklyCalendarProps) => {
                         <div
                             key={dateString}
                             className={`flex flex-col min-h-[160px] rounded-4xl p-4 transition-all border-t-[6px] shadow-sm ${getDayColor(dayIndex)} ${isToday
-                                    ? 'bg-blue-50/40 border-x-blue-100 border-b-blue-100 border-x border-b scale-[1.02] z-10'
-                                    : 'bg-slate-50 border-x-transparent border-b-transparent border-x border-b'
+                                ? 'bg-blue-50/40 border-x-blue-100 border-b-blue-100 border-x border-b scale-[1.02] z-10'
+                                : 'bg-slate-50 border-x-transparent border-b-transparent border-x border-b'
                                 }`}
                         >
                             <div className="mb-4 flex justify-between items-start">

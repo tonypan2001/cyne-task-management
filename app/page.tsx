@@ -24,6 +24,8 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeProjectId, setActiveProjectId] = useState('All')
 
+  const [referenceDate, setReferenceDate] = useState(new Date())
+
   // --- 1. Fetch Data ---
   useEffect(() => {
     async function fetchData() {
@@ -87,10 +89,14 @@ export default function DashboardPage() {
         </Link>
       </PageHeader>
 
-      <MonthlyGoals tasks={tasks} projects={projects} />
+      <MonthlyGoals tasks={tasks} projects={projects} currentReferenceDate={referenceDate} />
 
       {/* 4. Weekly Calendar */}
-      <WeeklyCalendar tasks={tasks} />
+      <WeeklyCalendar
+        tasks={tasks}
+        referenceDate={referenceDate} // ส่งค่าวันที่ไปโชว์
+        onDateChange={setReferenceDate} // ✨ ส่งตัวเปลี่ยนค่าไปใช้งาน (แก้ Error ts(6133))
+      />
 
       {/* 5. Filter & Search Section */}
       <div className="space-y-4">
