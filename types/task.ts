@@ -23,6 +23,7 @@ export interface Task {
     assignee_name: string | null;
     is_completed: boolean;
     due_date: string | null;
+    priority: 'High' | 'Medium' | 'Low' | null;
 }
 
 export interface TaskComment {
