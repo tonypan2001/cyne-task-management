@@ -46,3 +46,9 @@ export interface TaskStatusCardProps {
     progress: number;
     onToggle: () => void;
 }
+
+export interface DiscussionBoardProps {
+    comments: TaskComment[];
+    onSendMessage: (content: string) => void;
+    loading: boolean;
+}
