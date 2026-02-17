@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, LayoutGrid, Filter, Plus } from 'lucide-react'
+import { Search, LayoutGrid, Filter, Plus, Flame, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
-// ✨ Import สิ่งที่เราแยกไฟล์ไว้
+// ✨ Import Components & Types
 import { Task, Project } from '@/types/task'
 import { TaskCard } from '@/components/task/TaskCard'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -23,12 +23,12 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeProjectId, setActiveProjectId] = useState('All')
 
-  // --- 1. Fetch Data ---
+  // --- 1. Fetch Data (ดึงทั้งงานที่ทำอยู่และงานที่เสร็จแล้ว) ---
   useEffect(() => {
     async function fetchData() {
       try {
         const [tRes, pRes] = await Promise.all([
-          supabase.from('tasks').select('*').eq('is_completed', false).order('created_at', { ascending: false }),
+          supabase.from('tasks').select('*').order('created_at', { ascending: false }),
           supabase.from('projects').select('*').order('name')
         ])
 
@@ -43,36 +43,43 @@ export default function DashboardPage() {
     fetchData()
   }, [supabase])
 
-  // --- 2. Filter Logic (Optimized with useMemo) ---
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(t => {
+  // --- 2. Grouping & Filtering Logic (Optimized) ---
+  const groupedTasks = useMemo(() => {
+    // กรองตามโปรเจกต์และชื่อก่อน
+    const filtered = tasks.filter(t => {
       const matchProject = activeProjectId === 'All' || t.project_id === activeProjectId
       const matchSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (t.assignee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
       return matchProject && matchSearch
     })
+
+    // แยกกลุ่มตาม Priority และ Status
+    return {
+      urgent: filtered.filter(t => t.priority === 'High' && !t.is_completed),
+      stream: filtered.filter(t => t.priority !== 'High' && !t.is_completed),
+      finished: filtered.filter(t => t.is_completed)
+    }
   }, [searchTerm, activeProjectId, tasks])
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-        <p className="font-black uppercase tracking-widest text-xs">Synchronizing Board...</p>
+        <p className="font-black uppercase tracking-widest text-xs italic">Syncing Cyne Board...</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-20 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-16 pb-20 animate-in fade-in duration-700">
 
-      {/* ✨ 3. ใช้ PageHeader Component ที่เราสร้างไว้ */}
+      {/* 3. Page Header */}
       <PageHeader
-        title="Projects Board"
-        subtitle={`คุณปันมีงานที่ต้องดูแลทั้งหมด ${filteredTasks.length} รายการในวันนี้ค่ะ`}
+        title="Control Center"
+        subtitle={`วันนี้คุณปันมีงานด่วน ${groupedTasks.urgent.length} รายการที่ต้องเร่งมือนะค๊ะ!`}
         icon={<LayoutGrid size={16} />}
       >
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
           <div className="relative w-full md:w-80 group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
             <input
@@ -84,26 +91,26 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Quick Create Link */}
           <Link href="/create" className="bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
             <Plus size={24} />
           </Link>
         </div>
       </PageHeader>
 
+      {/* 4. Weekly Calendar */}
       <WeeklyCalendar tasks={tasks} />
 
-      {/* ✨ 4. Project Filter Tabs */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
-        <div className="bg-slate-100 p-3 rounded-2xl text-slate-400 mr-2">
+      {/* 5. Project Filter Tabs */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide px-2">
+        <div className="bg-slate-100 p-3 rounded-2xl text-slate-400 mr-2 shrink-0">
           <Filter size={20} />
         </div>
 
         <button
           onClick={() => setActiveProjectId('All')}
-          className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeProjectId === 'All'
-              ? 'bg-slate-900 text-white shadow-xl shadow-slate-300'
-              : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
+          className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeProjectId === 'All'
+            ? 'bg-slate-900 text-white shadow-xl shadow-slate-300'
+            : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
             }`}
         >
           All Assets
@@ -113,9 +120,9 @@ export default function DashboardPage() {
           <button
             key={project.id}
             onClick={() => setActiveProjectId(project.id)}
-            className={`px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeProjectId === project.id
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
-                : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
+            className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeProjectId === project.id
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
+              : 'bg-white text-slate-400 border border-slate-50 hover:bg-slate-50'
               }`}
           >
             {project.name}
@@ -123,21 +130,66 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ✨ 5. Task Grid โดยใช้ TaskCard Component */}
-      {filteredTasks.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-          <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-200">
-            <Search size={40} />
+      {/* 6. 🔥 URGENT SECTION (High Priority) */}
+      {groupedTasks.urgent.length > 0 && (
+        <section className="space-y-8">
+          <div className="flex items-center gap-4 ml-2">
+            <div className="bg-red-500 p-2.5 rounded-2xl text-white shadow-lg shadow-red-200 animate-pulse">
+              <Flame size={20} />
+            </div>
+            <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter uppercase">
+              Urgent Assets <span className="text-red-500/40 text-sm ml-2 font-medium">/ High Priority</span>
+            </h2>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 italic">No matching tasks found</h3>
-          <p className="text-slate-400 mt-2 font-medium">ลองเปลี่ยนโปรเจกต์หรือคำค้นหาดูนะค๊ะคุณปัน</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {groupedTasks.urgent.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 7. 📋 WORK STREAM (Normal Priority) */}
+      <section className="space-y-8">
+        <div className="flex items-center gap-4 ml-2">
+          <div className="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-100">
+            <LayoutGrid size={20} />
+          </div>
+          <h2 className="text-3xl font-black text-slate-800 italic tracking-tighter uppercase">
+            Work Stream <span className="text-slate-300 text-sm ml-2 font-medium">/ Normal Queue</span>
+          </h2>
         </div>
+
+        {groupedTasks.stream.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {groupedTasks.stream.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-slate-50 rounded-[3rem] border border-dashed border-slate-200">
+            <p className="text-slate-400 font-bold italic">No pending tasks in this project.</p>
+          </div>
+        )}
+      </section>
+
+      {/* 8. ✅ RECENTLY FINISHED */}
+      {groupedTasks.finished.length > 0 && (
+        <section className="pt-10 border-t border-slate-100 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+          <div className="flex items-center gap-4 ml-2 mb-8">
+            <div className="bg-slate-200 p-2.5 rounded-2xl text-slate-500">
+              <CheckCircle2 size={20} />
+            </div>
+            <h2 className="text-xl font-black text-slate-400 italic tracking-tighter uppercase">
+              Recently Finished
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {groupedTasks.finished.map((task) => (
+              <TaskCard key={task.id} task={task} />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   )
