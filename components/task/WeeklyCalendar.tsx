@@ -71,7 +71,7 @@ export const WeeklyCalendar = ({ tasks }: WeeklyCalendarProps) => {
                     return (
                         <div
                             key={dateString}
-                            className={`flex flex-col min-h-[160px] rounded-[2rem] p-4 transition-all border-t-[6px] shadow-sm ${getDayColor(dayIndex)
+                            className={`flex flex-col min-h-[160px] rounded-4xl p-4 transition-all border-t-[6px] shadow-sm ${getDayColor(dayIndex)
                                 } ${isToday
                                     ? 'bg-blue-50/40 border-x-blue-100 border-b-blue-100 border-x border-b scale-[1.02] shadow-blue-100'
                                     : 'bg-slate-50 border-x-transparent border-b-transparent border-x border-b'
