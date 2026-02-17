@@ -23,7 +23,7 @@ export default function CreateTaskPage() {
         fetchProjects()
     }, [fetchProjects])
 
-    // ✨ ฟังก์ชันสำหรับสร้างโปรเจกต์ใหม่ (เพิ่มตรงนี้ค่ะ)
+    // ✨ ฟังก์ชันสร้างโปรเจกต์ (พร้อมดัก Error ชื่อซ้ำ)
     const handleCreateProject = async (name: string) => {
         try {
             const { data: userData } = await supabase.auth.getUser()
@@ -35,14 +35,41 @@ export default function CreateTaskPage() {
                 .select()
                 .single()
 
-            if (error) throw error
+            if (error) {
+                if (error.code === '23505') { // Postgres error code สำหรับ Unique violation
+                    alert('ชื่อโปรเจกต์นี้มีอยู่แล้วนะค๊ะคุณปัน ลองใช้ชื่ออื่นดูค่ะ')
+                } else {
+                    throw error
+                }
+                return null
+            }
+
             if (data) {
                 setProjects(prev => [...prev, data as Project])
-                return data.id // คืนค่า ID เพื่อให้ฟอร์มเลือกโปรเจกต์นี้ทันที
+                return data.id
             }
         } catch (err) {
-            alert(`สร้างโปรเจกต์ไม่สำเร็จค่ะ ${err}`)
+            console.error(err)
             return null
+        }
+    }
+
+    // ✨ ฟังก์ชันลบโปรเจกต์
+    const handleDeleteProject = async (projectId: string) => {
+        try {
+            const { error } = await supabase
+                .from('projects')
+                .delete()
+                .eq('id', projectId)
+
+            if (error) throw error
+
+            // อัปเดต UI ทันที
+            setProjects(prev => prev.filter(p => p.id !== projectId))
+            return true
+        } catch (err) {
+            alert(`ไม่สามารถลบโปรเจกต์ได้ อาจจะมีงานค้างอยู่ในโปรเจกต์นี้นะค๊ะ ${err}`)
+            return false
         }
     }
 
@@ -60,7 +87,6 @@ export default function CreateTaskPage() {
                 imageUrl = supabase.storage.from('task-images').getPublicUrl(fileName).data.publicUrl
             }
 
-            // 1. บันทึก Task
             const { data: task, error: taskError } = await supabase
                 .from('tasks')
                 .insert({
@@ -71,12 +97,11 @@ export default function CreateTaskPage() {
                     project_id: formData.selectedProjectId,
                     creator_name: user.email,
                     assignee_name: formData.assigneeName || 'Unassigned',
-                    due_date: formData.due_date // ✨ อย่าลืมใส่ due_date ตรงนี้ด้วยนะค๊ะ
+                    due_date: formData.due_date
                 }).select().single()
 
             if (taskError) throw taskError
 
-            // 2. บันทึก Sub-tasks
             if (formData.subTasks.length > 0 && task) {
                 await supabase.from('sub_tasks').insert(
                     formData.subTasks.map(st => ({ task_id: task.id, title: st.title }))
@@ -102,7 +127,8 @@ export default function CreateTaskPage() {
             <TaskForm
                 projects={projects}
                 onSubmit={handleCreateTask}
-                onAddProject={handleCreateProject} // ✨ ส่งฟังก์ชันนี้ลงไปให้ TaskForm ค่ะ
+                onAddProject={handleCreateProject}
+                onDeleteProject={handleDeleteProject} // ✨ ส่งฟังก์ชันลบลงไปค่ะ
                 loading={loading}
             />
         </div>

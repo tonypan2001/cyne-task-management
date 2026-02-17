@@ -8,7 +8,7 @@ import {
 import NextImage from 'next/image'
 import { TaskFormProps } from '@/types/task'
 
-export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, loading }: TaskFormProps) => {
+export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDeleteProject, loading }: TaskFormProps) => {
     // --- States ---
     const [title, setTitle] = useState(initialData?.title || '')
     const [description, setDescription] = useState(initialData?.description || '')
@@ -36,11 +36,14 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, loadin
     }
 
     const handleDeleteProject = async (e: React.MouseEvent, projectId: string, projectName: string) => {
-        e.stopPropagation() // กันไม่ให้ไป trigger การเลือกโปรเจกต์
-        if (confirm(`คุณปันแน่ใจนะค๊ะว่าจะลบโปรเจกต์ "${projectName}"? งานที่อยู่ในนี้อาจจะหาไม่เจอได้นะค๊ะ`)) {
-            // ในที่นี้เราจะอาศัยหน้า Page หลักเป็นคนจัดการการลบผ่าน Props หรือสร้างฟังก์ชันเพิ่ม
-            // แต่เบื้องต้น Ray แนะนำให้ส่ง alert ไปบอกผู้ใช้ก่อนค่ะ
-            alert('ฟีเจอร์ลบโปรเจกต์กำลังตามมาในอัปเดตถัดไปค่ะ!')
+        e.stopPropagation()
+        if (confirm(`คุณปันแน่ใจนะค๊ะว่าจะลบโปรเจกต์ "${projectName}"?`)) {
+            if (onDeleteProject) {
+                const success = await onDeleteProject(projectId)
+                if (success && selectedProjectId === projectId) {
+                    setSelectedProjectId('') // ล้างค่าที่เลือกไว้ถ้าโปรเจกต์นั้นโดนลบ
+                }
+            }
         }
     }
 
