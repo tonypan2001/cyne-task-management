@@ -1,261 +1,242 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import NextImage from 'next/image'
-import { 
-  Layout, AlignLeft, Briefcase, User, PenTool, 
-  Camera, Send, Loader2, X, Plus, ListTodo, 
-  CheckCircle2, Circle, UserPlus 
+import {
+    Plus, UserPlus, Camera, Loader2, X,
+    CheckCircle2, Circle, FolderPlus, Briefcase
 } from 'lucide-react'
 
+// --- 1. กำหนด Interface ให้ชัดเจน (No any) ---
+interface Project {
+    id: string
+    name: string
+}
+
+interface SubTaskInput {
+    title: string
+}
+
 export default function CreateTaskPage() {
-  const supabase = createClient()
-  const router = useRouter()
-  
-  const [loading, setLoading] = useState(false)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('General')
-  const [assigneeName, setAssigneeName] = useState('')
-  
-  // ระบบ Sub-tasks
-  const [subTasks, setSubTasks] = useState<{ title: string }[]>([])
-  const [newSubTask, setNewSubTask] = useState('')
+    const supabase = createClient()
+    const router = useRouter()
 
-  // ระบบรูปภาพ
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [projects, setProjects] = useState<Project[]>([])
 
-  useEffect(() => {
-    if (!imageFile) {
-      setPreviewUrl(null)
-      return
+    // Form States
+    const [title, setTitle] = useState('')
+    const [description, setDescription] = useState('')
+    const [selectedProjectId, setSelectedProjectId] = useState('')
+    const [assigneeName, setAssigneeName] = useState('')
+    const [subTasks, setSubTasks] = useState<SubTaskInput[]>([])
+    const [newSubTask, setNewSubTask] = useState('')
+
+    // Project Creation States
+    const [isAddingProject, setIsAddingProject] = useState(false)
+    const [newProjectName, setNewProjectName] = useState('')
+
+    // Image States
+    const [imageFile, setImageFile] = useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+    // --- 2. แก้ไข useEffect และ fetchProjects ด้วย useCallback ---
+    const fetchProjects = useCallback(async () => {
+        const { data } = await supabase.from('projects').select('id, name').order('name')
+        if (data) setProjects(data as Project[])
+    }, [supabase])
+
+    useEffect(() => {
+        fetchProjects()
+    }, [fetchProjects]) // ✨ เพิ่ม fetchProjects เข้ามาตามกฎ ESLint ค่ะ
+
+    useEffect(() => {
+        if (!imageFile) {
+            setPreviewUrl(null)
+            return
+        }
+        const url = URL.createObjectURL(imageFile)
+        setPreviewUrl(url)
+        return () => URL.revokeObjectURL(url)
+    }, [imageFile])
+
+    const handleCreateProject = async () => {
+        if (!newProjectName.trim()) return
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData.user
+        if (!user) return
+
+        const { data, error } = await supabase
+            .from('projects')
+            .insert({ name: newProjectName.trim(), user_id: user.id })
+            .select().single()
+
+        if (!error && data) {
+            setProjects(prev => [...prev, data as Project])
+            setSelectedProjectId(data.id)
+            setNewProjectName('')
+            setIsAddingProject(false)
+        }
     }
-    const url = URL.createObjectURL(imageFile)
-    setPreviewUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [imageFile])
 
-  const addSubTask = () => {
-    if (newSubTask.trim()) {
-      setSubTasks([...subTasks, { title: newSubTask.trim() }])
-      setNewSubTask('')
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!selectedProjectId) return alert('กรุณาเลือกหรือสร้างโปรเจกต์ก่อนนะค๊ะ')
+        setLoading(true)
+
+        try {
+            const { data: userData } = await supabase.auth.getUser()
+            const user = userData.user
+            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนค่ะ')
+
+            let imageUrl = ''
+            if (imageFile) {
+                const fileName = `${user.id}/${Date.now()}.${imageFile.name.split('.').pop()}`
+                await supabase.storage.from('task-images').upload(fileName, imageFile)
+                imageUrl = supabase.storage.from('task-images').getPublicUrl(fileName).data.publicUrl
+            }
+
+            const { data: task, error: taskError } = await supabase
+                .from('tasks')
+                .insert({
+                    title,
+                    description,
+                    image_url: imageUrl,
+                    user_id: user.id,
+                    project_id: selectedProjectId,
+                    creator_name: user.email,
+                    assignee_name: assigneeName || 'Unassigned'
+                }).select().single()
+
+            if (taskError) throw taskError
+
+            if (subTasks.length > 0 && task) {
+                await supabase.from('sub_tasks').insert(
+                    subTasks.map(st => ({ task_id: task.id, title: st.title }))
+                )
+            }
+
+            router.push('/')
+            router.refresh()
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                alert(err.message)
+            }
+        } finally {
+            setLoading(false)
+        }
     }
-  }
 
-  const removeSubTask = (index: number) => {
-    setSubTasks(subTasks.filter((_, i) => i !== index))
-  }
+    return (
+        <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-500">
+            <h1 className="text-3xl font-black text-slate-800 mb-8 flex items-center gap-3">
+                <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-100"><Plus size={24} /></div>
+                Create New Task
+            </h1>
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-10 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
+                <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <Briefcase size={14} /> Select Project
+                    </label>
+                    <div className="flex flex-wrap gap-3">
+                        {projects.map(p => (
+                            <button key={p.id} type="button" onClick={() => setSelectedProjectId(p.id)}
+                                className={`px-6 py-3 rounded-2xl text-xs font-bold transition-all ${selectedProjectId === p.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}>
+                                {p.name}
+                            </button>
+                        ))}
+                        <button type="button" onClick={() => setIsAddingProject(true)} className="px-6 py-3 rounded-2xl text-xs font-bold bg-slate-900 text-white flex items-center gap-2 hover:bg-blue-700 transition-all">
+                            <FolderPlus size={14} /> New Project
+                        </button>
+                    </div>
 
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('กรุณาเข้าสู่ระบบก่อนสร้างงานนะค๊ะ')
+                    {isAddingProject && (
+                        <div className="flex gap-2 mt-4 animate-in slide-in-from-top-2">
+                            <input type="text" placeholder="Project name..." value={newProjectName} onChange={e => setNewProjectName(e.target.value)}
+                                className="flex-1 p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-bold" />
+                            <button type="button" onClick={handleCreateProject} className="bg-blue-600 text-white px-6 rounded-2xl font-bold text-xs">Create</button>
+                            <button type="button" onClick={() => setIsAddingProject(false)} className="bg-slate-100 text-slate-400 px-4 rounded-2xl hover:bg-red-50 hover:text-red-500"><X size={18} /></button>
+                        </div>
+                    )}
+                </div>
 
-      let imageUrl = ''
-      if (imageFile) {
-        const fileName = `${user.id}/${Date.now()}.${imageFile.name.split('.').pop()}`
-        const { error: uploadError } = await supabase.storage.from('task-images').upload(fileName, imageFile)
-        if (uploadError) throw uploadError
-        const { data: urlData } = supabase.storage.from('task-images').getPublicUrl(fileName)
-        imageUrl = urlData.publicUrl
-      }
+                <div className="space-y-6 pt-6 border-t border-slate-50">
+                    <input required className="w-full text-3xl font-black border-none focus:ring-0 outline-none placeholder:text-slate-200"
+                        placeholder="What needs to be done?" value={title} onChange={e => setTitle(e.target.value)} />
+                    <textarea className="w-full text-lg font-medium text-slate-500 border-none focus:ring-0 outline-none resize-none placeholder:text-slate-200"
+                        placeholder="Add some details..." rows={2} value={description} onChange={e => setDescription(e.target.value)} />
+                </div>
 
-      // 1. บันทึก Task หลัก พร้อมข้อมูลผู้สร้างและผู้รับผิดชอบ
-      const { data: mainTask, error: taskError } = await supabase
-        .from('tasks')
-        .insert({ 
-          title, 
-          description, 
-          category, 
-          image_url: imageUrl, 
-          user_id: user.id,
-          creator_name: user.email, // ใช้ email เป็นชื่อผู้สร้างเบื้องต้น
-          assignee_name: assigneeName || 'ยังไม่มอบหมาย'
-        })
-        .select()
-        .single()
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-50">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assignee</label>
+                        <div className="relative">
+                            <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                            <input type="text" placeholder="Who's working on this?" value={assigneeName} onChange={e => setAssigneeName(e.target.value)}
+                                className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 text-sm" />
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Step list (Sub-tasks)</label>
+                        <div className="flex gap-2">
+                            <input className="flex-1 px-5 py-4 bg-slate-50 rounded-2xl outline-none text-sm font-bold"
+                                placeholder="Next step..." value={newSubTask} onChange={e => setNewSubTask(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (newSubTask.trim()) {
+                                            setSubTasks([...subTasks, { title: newSubTask.trim() }]);
+                                            setNewSubTask('');
+                                        }
+                                    }
+                                }} />
+                            <button type="button" onClick={() => {
+                                if (newSubTask.trim()) {
+                                    setSubTasks([...subTasks, { title: newSubTask.trim() }]);
+                                    setNewSubTask('');
+                                }
+                            }}
+                                className="bg-slate-900 text-white px-5 rounded-2xl"><Plus size={20} /></button>
+                        </div>
+                    </div>
+                </div>
 
-      if (taskError) throw taskError
+                {subTasks.length > 0 && (
+                    <div className="space-y-2 bg-slate-50/50 p-4 rounded-3xl">
+                        {subTasks.map((st, i) => (
+                            <div key={i} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
+                                <Circle size={14} className="text-slate-300" />
+                                <span className="flex-1 text-sm font-bold text-slate-600">{st.title}</span>
+                                <button type="button" onClick={() => setSubTasks(subTasks.filter((_, idx) => idx !== i))}><X size={14} className="text-slate-300" /></button>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-      // 2. บันทึก Sub-tasks (ถ้ามี)
-      if (subTasks.length > 0) {
-        const subTasksToInsert = subTasks.map(st => ({
-          task_id: mainTask.id,
-          title: st.title
-        }))
-        const { error: subError } = await supabase.from('sub_tasks').insert(subTasksToInsert)
-        if (subError) throw subError
-      }
+                <div className="pt-6 border-t border-slate-50">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-4 block">Attachment</label>
+                    {previewUrl ? (
+                        <div className="relative w-full h-64 rounded-3xl overflow-hidden border border-slate-100">
+                            <NextImage src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
+                            <button type="button" onClick={() => setImageFile(null)} className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-md text-red-500 rounded-xl shadow-lg"><X size={18} /></button>
+                        </div>
+                    ) : (
+                        <label className="flex flex-col items-center justify-center h-32 bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl cursor-pointer hover:bg-slate-100 transition-all">
+                            <Camera size={24} className="text-slate-300 mb-2" />
+                            <span className="text-xs font-bold text-slate-400">Add Image</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] || null)} />
+                        </label>
+                    )}
+                </div>
 
-      router.push('/')
-      router.refresh()
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค่ะ')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="max-w-3xl mx-auto p-6 md:p-10 text-slate-800">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold flex items-center gap-3">
-          <div className="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-100">
-            <Plus size={28} />
-          </div>
-          สร้างงานใหม่
-        </h1>
-        <p className="text-slate-400 mt-2 ml-1">กรอกรายละเอียดเพื่อมอบหมายและจัดการงานอย่างเป็นระบบ</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
-        
-        {/* หัวข้อและคำอธิบาย */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 text-slate-400">
-            <AlignLeft size={18} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">ข้อมูลงาน</span>
-          </div>
-          <input
-            required
-            className="w-full px-0 py-2 text-2xl font-bold border-b-2 border-slate-50 focus:border-blue-500 outline-none transition-all placeholder:text-slate-200"
-            placeholder="ระบุหัวข้อการทำงาน..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <textarea
-            className="w-full px-0 py-2 text-slate-600 border-none focus:ring-0 outline-none resize-none placeholder:text-slate-300 text-lg"
-            placeholder="เพิ่มคำอธิบายรายละเอียดงาน (ไม่บังคับ)..."
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-50">
-          {/* หมวดหมู่ */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">หมวดหมู่</label>
-            <div className="relative">
-              <select 
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none appearance-none font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500/10"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="General">ทั่วไป</option>
-                <option value="Work">งานประจำ</option>
-                <option value="Freelance">ฟรีแลนซ์</option>
-                <option value="Personal">ส่วนตัว</option>
-              </select>
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500">
-                {category === 'Work' && <Briefcase size={20} />}
-                {category === 'Personal' && <User size={20} />}
-                {category === 'Freelance' && <PenTool size={20} />}
-                {category === 'General' && <Layout size={20} />}
-              </div>
-            </div>
-          </div>
-
-          {/* มอบหมายงาน */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">มอบหมายงานให้</label>
-            <div className="relative">
-              <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-              <input
-                type="text"
-                placeholder="ชื่อผู้รับผิดชอบ..."
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl outline-none font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500/10 placeholder:text-slate-300"
-                value={assigneeName}
-                onChange={(e) => setAssigneeName(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ระบบ Sub-tasks */}
-        <div className="space-y-5 pt-6 border-t border-slate-50">
-          <div className="flex items-center gap-2 text-slate-400">
-            <ListTodo size={18} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">รายการขั้นตอน (Sub-tasks)</span>
-          </div>
-          
-          <div className="space-y-3">
-            {subTasks.map((st, index) => (
-              <div key={index} className="flex items-center gap-4 p-4 bg-slate-50/50 rounded-2xl border border-slate-50 group transition-all hover:bg-white hover:shadow-md">
-                <Circle size={18} className="text-slate-200" />
-                <span className="flex-1 text-sm font-medium text-slate-600">{st.title}</span>
-                <button type="button" onClick={() => removeSubTask(index)} className="text-slate-300 hover:text-red-500 transition-colors">
-                  <X size={18} />
+                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-200">
+                    {loading ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={24} />}
+                    {loading ? 'Saving Task...' : 'Confirm & Create Task'}
                 </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <input
-              className="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/10 placeholder:text-slate-300"
-              placeholder="เช่น ออกแบบร่างแรก, ส่งตรวจงาน..."
-              value={newSubTask}
-              onChange={(e) => setNewSubTask(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSubTask())}
-            />
-            <button 
-              type="button" 
-              onClick={addSubTask}
-              className="p-4 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg active:scale-95"
-            >
-              <Plus size={24} />
-            </button>
-          </div>
+            </form>
         </div>
-
-        {/* รูปภาพประกอบ */}
-        <div className="space-y-5 pt-6 border-t border-slate-50">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Camera size={18} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">รูปภาพประกอบ</span>
-          </div>
-          
-          {!previewUrl ? (
-            <label className="flex flex-col items-center justify-center gap-3 bg-slate-50 py-10 rounded-[2rem] border-2 border-dashed border-slate-200 cursor-pointer hover:bg-slate-100 hover:border-blue-300 transition-all group">
-              <div className="bg-white p-4 rounded-2xl shadow-sm text-slate-400 group-hover:text-blue-500 transition-colors">
-                <Camera size={32} />
-              </div>
-              <span className="text-sm font-bold text-slate-400">คลิกเพื่อเลือกรูปภาพ</span>
-              <input type="file" className="hidden" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} />
-            </label>
-          ) : (
-            <div className="relative w-full h-64 rounded-[2rem] overflow-hidden shadow-xl border border-slate-100">
-              <NextImage src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
-              <button 
-                type="button" 
-                onClick={() => setImageFile(null)} 
-                className="absolute top-4 right-4 bg-white/90 backdrop-blur-md text-red-500 p-2 rounded-xl shadow-lg hover:bg-red-50 transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ปุ่ม Submit */}
-        <div className="pt-6">
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-black text-lg py-5 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-[0.98] disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={24} />}
-            {loading ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันการสร้างงาน'}
-          </button>
-        </div>
-      </form>
-    </div>
-  )
+    )
 }
