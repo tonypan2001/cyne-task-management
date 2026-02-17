@@ -1,5 +1,11 @@
-import Sidebar from '@/components/Sidebar'
+import type { Metadata } from 'next'
 import './globals.css'
+import { lineSeed } from './fonts'
+
+export const metadata: Metadata = {
+  title: 'Cyne | Creative Management',
+  description: 'Manage your creative assets and tasks with precision.',
+}
 
 export default function RootLayout({
   children,
@@ -7,15 +13,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="th">
-      <body className="bg-slate-50 min-h-screen text-slate-800">
-        <div className="flex">
-          <Sidebar />
-          {/* Main Content Area */}
-          <main className="flex-1 ml-64 min-h-screen p-8">
-            {children}
-          </main>
-        </div>
+    <html lang="th" className={`${lineSeed.variable}`}>
+      <body className="font-sans antialiased bg-slate-50 text-slate-900">
+        <main className="min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   )
