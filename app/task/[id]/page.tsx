@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import NextImage from 'next/image'
-import { ArrowLeft, Calendar, User, Briefcase, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Briefcase, CheckCircle2, Edit3, Trash2 } from 'lucide-react'
 
 // ✨ Import Components & Types
 import { Task, SubTask, TaskComment } from '@/types/task'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { TaskStatusCard } from '@/components/task/TaskStatusCard'
 import { DiscussionBoard } from '@/components/task/DiscussionBoard'
+import Link from 'next/link'
 
 export default function TaskDetailPage() {
     const { id } = useParams()
@@ -61,6 +62,28 @@ export default function TaskDetailPage() {
         if (data) setComments([data as TaskComment, ...comments])
     }
 
+    const handleDeleteTask = async () => {
+        // ใช้ confirm พื้นฐานไปก่อนเพื่อให้โค้ดไม่อ้วนนะคะ
+        if (!confirm('คุณปันแน่ใจนะคะว่าจะลบงานชิ้นนี้? ข้อมูลจะหายไปถาวรเลยนะค๊ะ')) return
+
+        try {
+            const { error } = await supabase
+                .from('tasks')
+                .delete()
+                .eq('id', id)
+
+            if (error) throw error
+
+            // ลบเสร็จแล้วให้กลับไปหน้า Dashboard ค่ะ
+            router.push('/')
+            router.refresh()
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                alert('เกิดข้อผิดพลาดในการลบค่ะ: ' + err.message)
+            }
+        }
+    }
+
     const progress = subTasks.length > 0
         ? Math.round((subTasks.filter(st => st.is_completed).length / subTasks.length) * 100)
         : (task?.is_completed ? 100 : 0)
@@ -69,9 +92,36 @@ export default function TaskDetailPage() {
 
     return (
         <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
-            <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest mb-10 hover:text-blue-600 transition-colors">
-                <ArrowLeft size={16} /> Back to Board
-            </button>
+            <div className="flex items-center justify-between mb-10">
+                {/* ปุ่ม Back ฝั่งซ้าย */}
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-600 transition-colors"
+                >
+                    <ArrowLeft size={16} /> Back to Board
+                </button>
+
+                {/* กลุ่มปุ่ม Action ฝั่งขวา */}
+                <div className="flex gap-3">
+                    {/* ปุ่มแก้ไข */}
+                    <Link
+                        href={`/edit/${id}`}
+                        className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm"
+                    >
+                        <Edit3 size={16} />
+                        Edit Task
+                    </Link>
+
+                    {/* ปุ่มลบ */}
+                    <button
+                        onClick={handleDeleteTask}
+                        className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                </div>
+            </div>
 
             <PageHeader
                 title={task.title}
