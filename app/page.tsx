@@ -48,25 +48,21 @@ export default function DashboardPage() {
   }, [supabase])
 
   const overdueTasks = useMemo(() => {
-    // สร้างวันที่วันนี้ตอน 00:00:00
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-  
+
     return tasks.filter(t => {
-      // ต้องยังไม่เสร็จ
-      if (t.is_completed) return false;
-      // ถ้าไม่มี due_date ให้ถือว่าเป็นงานไม่มีกำหนด (ไม่ Overdue)
-      if (!t.due_date) return false;
-  
-      // แปลงวันที่จาก DB (YYYY-MM-DD) ให้เป็น Date Object แบบไม่สน Timezone
+      if (!t.due_date || t.is_completed) return false;
+
+      // ✨ แก้ตรงนี้ค่ะ: อย่าใช้ new Date(t.due_date) ตรงๆ 
+      // ให้แยกส่วนออกมาเพื่อสร้าง Date ที่เป็นเวลาเที่ยงคืนของท้องถิ่น
       const [year, month, day] = t.due_date.split('-').map(Number);
       const taskDate = new Date(year, month - 1, day);
-      
+      taskDate.setHours(0, 0, 0, 0);
+
       return taskDate < today;
     });
   }, [tasks]);
-
-  
 
   // --- 2. Grouping & Filtering Logic ---
   const groupedTasks = useMemo(() => {
