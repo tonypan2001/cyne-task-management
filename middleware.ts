@@ -43,8 +43,8 @@ export async function middleware(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession()
 
     // 1. ถ้ายังไม่ได้ Login และกำลังจะเข้าหน้าอื่นที่ไม่ใช่ /auth -> ส่งไป /auth
-    if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
-        return NextResponse.redirect(new URL('/auth', request.url))
+    if (!session && !request.nextUrl.pathname.startsWith('/login')) {
+        return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // 2. ถ้า Login แล้ว แต่ดันจะเข้าหน้า /auth -> ส่งกลับหน้าหลัก
