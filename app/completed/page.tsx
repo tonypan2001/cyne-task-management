@@ -2,77 +2,88 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { Trophy, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { CheckCircle2, ArrowLeft, Trophy } from 'lucide-react'
 
-// ✨ กำหนด Interface แทนการใช้ any
-interface Task {
-    id: string
-    title: string
-    category: string
-    assignee_name: string | null
-    is_completed: boolean
-    created_at: string
-}
+// ✨ Import สิ่งที่เราแยกไว้ค่ะ
+import { Task } from '@/types/task'
+import { TaskCard } from '@/components/task/TaskCard'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export default function CompletedTasksPage() {
     const supabase = createClient()
-    const [tasks, setTasks] = useState<Task[]>([]) // ✨ ใช้ Task[]
+    const [completedTasks, setCompletedTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function fetchCompleted() {
-            const { data, error } = await supabase
-                .from('tasks')
-                .select('*')
-                .eq('is_completed', true)
-                .order('created_at', { ascending: false })
+            try {
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .eq('is_completed', true)
+                    .order('created_at', { ascending: false })
 
-            if (!error && data) {
-                setTasks(data as Task[])
+                if (error) throw error
+                if (data) setCompletedTasks(data as Task[])
+            } catch (err) {
+                console.error('Error fetching completed tasks:', err)
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         fetchCompleted()
     }, [supabase])
 
-    if (loading) return <div className="p-10 text-slate-400 font-medium">กำลังโหลดผลงานที่สำเร็จแล้ว...</div>
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-500"></div>
+                <p className="font-black uppercase tracking-widest text-[10px]">Fetching your achievements...</p>
+            </div>
+        )
+    }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-10 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-800 flex items-center gap-3">
-                        <div className="bg-yellow-100 p-2 rounded-2xl">
-                            <Trophy className="text-yellow-500" size={32} />
-                        </div>
-                        Completed Tasks
-                    </h1>
-                    <p className="text-slate-400 font-medium mt-2">รวมผลงานที่คุณปันทำสำเร็จแล้วค่ะ ยอดเยี่ยมมาก!</p>
-                </div>
-                <Link href="/" className="p-4 bg-white rounded-2xl border border-slate-100 text-slate-400 hover:text-slate-800 transition-all shadow-sm">
-                    <ArrowLeft size={24} />
+        <div className="max-w-7xl mx-auto space-y-10 pb-20 animate-in slide-in-from-bottom-4 duration-700">
+
+            {/* ✨ ใช้ PageHeader ให้เหมือนหน้า Dashboard */}
+            <PageHeader
+                title="Completed Tasks"
+                subtitle={`ยอดเยี่ยมมากค่ะคุณปัน! คุณทำโปรเจกต์เสร็จสมบูรณ์ไปแล้ว ${completedTasks.length} รายการ`}
+                icon={<Trophy size={16} className="text-yellow-500" />}
+            >
+                <Link
+                    href="/"
+                    className="flex items-center gap-2 px-6 py-4 bg-white rounded-2xl border border-slate-100 text-slate-400 hover:text-slate-800 transition-all font-bold text-sm shadow-sm"
+                >
+                    <ArrowLeft size={18} />
+                    Back to Board
                 </Link>
-            </div>
+            </PageHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {tasks.map(task => (
-                    <Link href={`/task/${task.id}`} key={task.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 flex items-center gap-6 group hover:border-green-200 transition-all shadow-sm">
-                        <div className="bg-green-50 p-4 rounded-2xl text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all">
-                            <CheckCircle2 size={32} />
+            {/* Task Grid */}
+            {completedTasks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {completedTasks.map((task) => (
+                        <div key={task.id} className="opacity-80 hover:opacity-100 transition-opacity">
+                            <TaskCard task={task} />
                         </div>
-                        <div className="flex-1">
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{task.category}</span>
-                            <h3 className="text-xl font-bold text-slate-700 line-through decoration-slate-300 group-hover:decoration-green-500 transition-all">{task.title}</h3>
-                            <p className="text-[10px] text-slate-400 mt-1 font-bold uppercase">Assignee: {task.assignee_name || 'N/A'}</p>
-                        </div>
-                    </Link>
-                ))}
-            </div>
-
-            {tasks.length === 0 && (
+                    ))}
+                </div>
+            ) : (
                 <div className="text-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-                    <p className="text-slate-400 font-medium italic">ยังไม่มีงานที่เสร็จสมบูรณ์เลยค่ะ สู้ ๆ นะค๊ะคุณปัน!</p>
+                    <div className="bg-yellow-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-yellow-200">
+                        <Trophy size={40} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800 italic">No completed tasks yet</h3>
+                    <p className="text-slate-400 mt-2 font-medium">สู้ๆ นะค๊ะคุณปัน งานที่ทำเสร็จจะมาโชว์ที่นี่เพื่อเป็นกำลังใจให้ค่ะ</p>
+                    <Link
+                        href="/"
+                        className="inline-block mt-8 px-10 py-4 bg-slate-900 text-white rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-blue-600 transition-all"
+                    >
+                        Go to Active Board
+                    </Link>
                 </div>
             )}
         </div>
