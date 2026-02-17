@@ -42,6 +42,13 @@ export interface TaskFormData {
     due_date: string; // เพิ่มฟิลด์นี้ค่ะ
 }
 
+export interface TaskFormProps {
+    initialData?: Partial<TaskFormData>;
+    projects: Project[];
+    onSubmit: (data: TaskFormData) => void;
+    loading: boolean;
+}
+
 export interface TaskStatusCardProps {
     isCompleted: boolean;
     progress: number;

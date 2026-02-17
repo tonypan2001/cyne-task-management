@@ -6,14 +6,8 @@ import {
     Briefcase, Loader2, Calendar as CalendarIcon, Trash2
 } from 'lucide-react'
 import NextImage from 'next/image'
-import { Project, TaskFormData } from '@/types/task'
-
-interface TaskFormProps {
-    initialData?: Partial<TaskFormData>;
-    projects: Project[];
-    onSubmit: (data: TaskFormData) => void;
-    loading: boolean;
-}
+// ✨ Import TaskFormProps เข้ามาแทนการประกาศในไฟล์นี้ค่ะ
+import { TaskFormProps } from '@/types/task'
 
 export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormProps) => {
     // --- States ---
@@ -79,7 +73,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormP
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-10 bg-white p-8 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 animate-in fade-in duration-500">
+        <form onSubmit={handleSubmit} className="space-y-10 bg-white p-8 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 animate-in fade-in duration-700">
 
             {/* 1. Project Selection */}
             <div className="space-y-5">
@@ -93,8 +87,8 @@ export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormP
                             type="button"
                             onClick={() => setSelectedProjectId(p.id)}
                             className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedProjectId === p.id
-                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 scale-105'
-                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-transparent'
+                                ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 scale-105'
+                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-transparent'
                                 }`}
                         >
                             {p.name}
