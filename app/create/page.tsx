@@ -23,6 +23,29 @@ export default function CreateTaskPage() {
         fetchProjects()
     }, [fetchProjects])
 
+    // ✨ ฟังก์ชันสำหรับสร้างโปรเจกต์ใหม่ (เพิ่มตรงนี้ค่ะ)
+    const handleCreateProject = async (name: string) => {
+        try {
+            const { data: userData } = await supabase.auth.getUser()
+            if (!userData.user) return
+
+            const { data, error } = await supabase
+                .from('projects')
+                .insert({ name, user_id: userData.user.id })
+                .select()
+                .single()
+
+            if (error) throw error
+            if (data) {
+                setProjects(prev => [...prev, data as Project])
+                return data.id // คืนค่า ID เพื่อให้ฟอร์มเลือกโปรเจกต์นี้ทันที
+            }
+        } catch (err) {
+            alert(`สร้างโปรเจกต์ไม่สำเร็จค่ะ ${err}`)
+            return null
+        }
+    }
+
     const handleCreateTask = async (formData: TaskFormData) => {
         setLoading(true)
         try {
@@ -47,7 +70,8 @@ export default function CreateTaskPage() {
                     user_id: user.id,
                     project_id: formData.selectedProjectId,
                     creator_name: user.email,
-                    assignee_name: formData.assigneeName || 'Unassigned'
+                    assignee_name: formData.assigneeName || 'Unassigned',
+                    due_date: formData.due_date // ✨ อย่าลืมใส่ due_date ตรงนี้ด้วยนะค๊ะ
                 }).select().single()
 
             if (taskError) throw taskError
@@ -78,6 +102,7 @@ export default function CreateTaskPage() {
             <TaskForm
                 projects={projects}
                 onSubmit={handleCreateTask}
+                onAddProject={handleCreateProject} // ✨ ส่งฟังก์ชันนี้ลงไปให้ TaskForm ค่ะ
                 loading={loading}
             />
         </div>

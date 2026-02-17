@@ -48,6 +48,7 @@ export interface TaskFormProps {
     projects: Project[];
     onSubmit: (data: TaskFormData) => void;
     loading: boolean;
+    onAddProject?: (name: string) => Promise<string | null | undefined>;
 }
 
 export interface TaskStatusCardProps {
