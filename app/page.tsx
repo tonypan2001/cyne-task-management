@@ -11,7 +11,7 @@ import { TaskCard } from '@/components/task/TaskCard'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 import { MonthlyGoals } from '@/components/dashboard/MonthlyGoals'
-import { MonthlySummary } from '@/components/dashboard/MonthlySummary'
+// import { MonthlySummary } from '@/components/dashboard/MonthlySummary'
 
 export default function DashboardPage() {
   const supabase = createClient()

@@ -1,24 +1,23 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Target, Flag, Circle } from 'lucide-react'
+import { Target, Flag, Circle, ChevronRight } from 'lucide-react'
 import { Task, Project } from '@/types/task'
+import Link from 'next/link'
 
 interface MonthlyGoalsProps {
     tasks: Task[]
     projects: Project[]
-    currentReferenceDate: Date // ✨ รับวันที่อ้างอิงจาก Calendar มาคำนวณค่ะ
+    currentReferenceDate: Date
 }
 
 export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyGoalsProps) => {
 
-    // ✨ คำนวณความคืบหน้าโดยกรองเฉพาะ Task ในเดือนที่เลือก
     const projectStats = useMemo(() => {
         const refMonth = currentReferenceDate.getMonth()
         const refYear = currentReferenceDate.getFullYear()
 
         return projects.map(project => {
-            // กรอง Task เฉพาะของโปรเจกต์นี้ และต้องอยู่ในเดือน/ปี ที่ตรงกับปฏิทิน
             const projectTasksInMonth = tasks.filter(t => {
                 if (!t.due_date || t.project_id !== project.id) return false
                 const taskDate = new Date(t.due_date)
@@ -39,7 +38,6 @@ export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyG
         })
     }, [tasks, projects, currentReferenceDate])
 
-    // แสดงชื่อเดือนตามวันที่อ้างอิง
     const displayMonth = currentReferenceDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
     return (
@@ -55,7 +53,6 @@ export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyG
                     </div>
                 </div>
 
-                {/* สรุปภาพรวมเล็กๆ */}
                 <div className="hidden md:block text-right">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Projects</p>
                     <p className="text-xl font-black text-slate-800 italic">
@@ -66,18 +63,28 @@ export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyG
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projectStats.map((proj) => (
-                    <div key={proj.id} className={`group p-5 rounded-4xl border transition-all duration-500 ${!proj.hasTasks
-                            ? 'bg-slate-50 border-slate-100 opacity-40'
-                            : 'bg-white border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-50/50'
-                        }`}>
+                    /* ✨ เปลี่ยนจาก div เป็น Link เพื่อให้กดไปหน้า Project Detail ได้ค่ะ */
+                    <Link
+                        href={`/project/${proj.id}`}
+                        key={proj.id}
+                        className={`group p-5 rounded-4xl border transition-all duration-500 flex flex-col hover:-translate-y-1 ${!proj.hasTasks
+                            ? 'bg-slate-50 border-slate-100 opacity-40 cursor-not-allowed pointer-events-none'
+                            : 'bg-white border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-50/50 cursor-pointer'
+                            }`}
+                    >
                         <div className="flex justify-between items-start mb-4">
                             <div className="flex items-center gap-2">
                                 {!proj.hasTasks ? (
                                     <Circle size={12} className="text-slate-300" />
                                 ) : (
-                                    <Flag size={12} className={proj.progress === 100 ? 'text-green-500' : 'text-blue-500'} />
+                                    <div className="relative">
+                                        <Flag size={12} className={proj.progress === 100 ? 'text-green-500' : 'text-blue-500'} />
+                                        {/* Hover Icon Effect */}
+                                        <ChevronRight size={10} className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-blue-400" />
+                                    </div>
                                 )}
-                                <span className={`text-[11px] font-black uppercase tracking-tight ${!proj.hasTasks ? 'text-slate-400' : 'text-slate-700'}`}>
+                                <span className={`text-[11px] font-black uppercase tracking-tight transition-colors ${!proj.hasTasks ? 'text-slate-400' : 'text-slate-700 group-hover:text-blue-600'
+                                    }`}>
                                     {proj.name}
                                 </span>
                             </div>
@@ -93,14 +100,14 @@ export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyG
                             </div>
                         </div>
 
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-auto">
                             <div
                                 className={`h-full transition-all duration-1000 ease-out rounded-full ${!proj.hasTasks ? 'bg-slate-200' : proj.progress === 100 ? 'bg-green-500' : 'bg-blue-600'
                                     }`}
                                 style={{ width: `${proj.hasTasks ? proj.progress : 0}%` }}
                             />
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
         </div>
