@@ -11,7 +11,6 @@ import { TaskCard } from '@/components/task/TaskCard'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 import { MonthlyGoals } from '@/components/dashboard/MonthlyGoals'
-// import { MonthlySummary } from '@/components/dashboard/MonthlySummary'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -89,12 +88,6 @@ export default function DashboardPage() {
           <span className="text-[11px] font-black uppercase tracking-widest">New Task</span>
         </Link>
       </PageHeader>
-
-      {/* <MonthlySummary
-        tasks={tasks}
-        projects={projects}
-        currentReferenceDate={referenceDate}
-      /> */}
 
       <MonthlyGoals tasks={tasks} projects={projects} currentReferenceDate={referenceDate} />
 
