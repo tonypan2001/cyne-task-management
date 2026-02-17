@@ -100,7 +100,7 @@ export default function EditTaskPage() {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-6 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
+                <div className="flex items-center gap-4 p-6 bg-blue-50/50 rounded-4xl border border-blue-100/50">
                     <button
                         type="button"
                         onClick={() => setIsCompleted(!isCompleted)}
