@@ -3,194 +3,121 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import NextImage from 'next/image'
-import { ArrowLeft, Calendar, User, Briefcase, CheckCircle2, Edit3, Trash2 } from 'lucide-react'
-
-// ✨ Import Components & Types
-import { Task, SubTask, TaskComment } from '@/types/task'
+import { Edit3, ArrowLeft } from 'lucide-react'
+import { Project, TaskFormData, Task, SubTask } from '@/types/task'
+import { TaskForm } from '@/components/task/TaskForm'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { TaskStatusCard } from '@/components/task/TaskStatusCard'
-import { DiscussionBoard } from '@/components/task/DiscussionBoard'
-import Link from 'next/link'
 
-export default function TaskDetailPage() {
+export default function EditTaskPage() {
     const { id } = useParams()
     const router = useRouter()
     const supabase = createClient()
 
-    const [task, setTask] = useState<Task | null>(null)
-    const [subTasks, setSubTasks] = useState<SubTask[]>([])
-    const [comments, setComments] = useState<TaskComment[]>([])
-    const [loading, setLoading] = useState(true)
+    const [projects, setProjects] = useState<Project[]>([])
+    const [initialData, setInitialData] = useState<Partial<TaskFormData> | null>(null)
+    const [loading, setLoading] = useState(false)
+    const [fetching, setFetching] = useState(true)
 
     const fetchData = useCallback(async () => {
         if (!id) return
         try {
-            const [tRes, stRes, cRes] = await Promise.all([
+            const [pRes, tRes, stRes] = await Promise.all([
+                supabase.from('projects').select('id, name').order('name'),
                 supabase.from('tasks').select('*').eq('id', id).single(),
-                supabase.from('sub_tasks').select('*').eq('task_id', id).order('created_at'),
-                supabase.from('task_comments').select('*').eq('task_id', id).order('created_at', { ascending: false })
+                supabase.from('sub_tasks').select('*').eq('task_id', id).order('created_at')
             ])
 
-            if (tRes.data) setTask(tRes.data as Task)
-            if (stRes.data) setSubTasks(stRes.data as SubTask[])
-            if (cRes.data) setComments(cRes.data as TaskComment[])
+            if (pRes.data) setProjects(pRes.data as Project[])
+
+            if (tRes.data) {
+                const task = tRes.data as Task
+                const subTasks = stRes.data as SubTask[]
+
+                // ✨ Mapping ข้อมูลเดิมเข้าสู่รูปแบบที่ TaskForm ต้องการ
+                setInitialData({
+                    title: task.title,
+                    description: task.description || '',
+                    selectedProjectId: task.project_id || '',
+                    assigneeName: task.assignee_name || '',
+                    due_date: task.due_date || '', // 📅 ดึงวันที่เดิมมาใส่ตรงนี้ค่ะ
+                    subTasks: subTasks.map(st => ({ title: st.title }))
+                })
+            }
         } catch (err) {
-            console.error(err)
+            console.error('Error fetching edit data:', err)
         } finally {
-            setLoading(false)
+            setFetching(false)
         }
     }, [id, supabase])
 
     useEffect(() => { fetchData() }, [fetchData])
 
-    const handleToggleSubTask = async (stId: string, currentStatus: boolean) => {
-        await supabase.from('sub_tasks').update({ is_completed: !currentStatus }).eq('id', stId)
-        setSubTasks(subTasks.map(st => st.id === stId ? { ...st, is_completed: !currentStatus } : st))
-    }
-
-    const handleSendMessage = async (content: string) => {
-        const { data: userData } = await supabase.auth.getUser()
-        if (!userData.user) return
-
-        const { data } = await supabase.from('task_comments').insert({
-            task_id: id,
-            user_id: userData.user.id,
-            content
-        }).select().single()
-
-        if (data) setComments([data as TaskComment, ...comments])
-    }
-
-    const handleDeleteTask = async () => {
-        // ใช้ confirm พื้นฐานไปก่อนเพื่อให้โค้ดไม่อ้วนนะคะ
-        if (!confirm('คุณปันแน่ใจนะคะว่าจะลบงานชิ้นนี้? ข้อมูลจะหายไปถาวรเลยนะค๊ะ')) return
-
+    const handleUpdate = async (formData: TaskFormData) => {
+        setLoading(true)
         try {
-            const { error } = await supabase
+            // 1. อัปเดตข้อมูล Task หลัก
+            const { error: taskError } = await supabase
                 .from('tasks')
-                .delete()
+                .update({
+                    title: formData.title,
+                    description: formData.description,
+                    project_id: formData.selectedProjectId,
+                    assignee_name: formData.assigneeName,
+                    due_date: formData.due_date // 💾 บันทึกวันที่ใหม่ (หรือวันเดิม) ลงไปค่ะ
+                })
                 .eq('id', id)
 
-            if (error) throw error
+            if (taskError) throw taskError
 
-            // ลบเสร็จแล้วให้กลับไปหน้า Dashboard ค่ะ
-            router.push('/')
+            // 2. จัดการ Sub-tasks (ลบของเก่าแล้วเพิ่มใหม่เพื่อให้ข้อมูลตรงกับหน้าฟอร์มที่สุด)
+            await supabase.from('sub_tasks').delete().eq('task_id', id)
+
+            if (formData.subTasks.length > 0) {
+                const { error: subError } = await supabase.from('sub_tasks').insert(
+                    formData.subTasks.map(st => ({ task_id: id, title: st.title }))
+                )
+                if (subError) throw subError
+            }
+
+            router.push(`/task/${id}`)
             router.refresh()
         } catch (err: unknown) {
-            if (err instanceof Error) {
-                alert('เกิดข้อผิดพลาดในการลบค่ะ: ' + err.message)
-            }
+            if (err instanceof Error) alert(err.message)
+        } finally {
+            setLoading(false)
         }
     }
 
-    const progress = subTasks.length > 0
-        ? Math.round((subTasks.filter(st => st.is_completed).length / subTasks.length) * 100)
-        : (task?.is_completed ? 100 : 0)
-
-    if (loading || !task) return <div className="p-20 text-center font-black text-slate-200 animate-pulse">LOADING DETAILS...</div>
+    if (fetching) return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="font-black text-[10px] uppercase tracking-widest">Loading Task Data...</p>
+        </div>
+    )
 
     return (
-        <div className="max-w-7xl mx-auto pb-20 animate-in fade-in duration-700">
-            <div className="flex items-center justify-between mb-10">
-                {/* ปุ่ม Back ฝั่งซ้าย */}
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-600 transition-colors"
-                >
-                    <ArrowLeft size={16} /> Back to Board
-                </button>
-
-                {/* กลุ่มปุ่ม Action ฝั่งขวา */}
-                <div className="flex gap-3">
-                    {/* ปุ่มแก้ไข */}
-                    <Link
-                        href={`/edit/${id}`}
-                        className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm"
-                    >
-                        <Edit3 size={16} />
-                        Edit Task
-                    </Link>
-
-                    {/* ปุ่มลบ */}
-                    <button
-                        onClick={handleDeleteTask}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm"
-                    >
-                        <Trash2 size={16} />
-                        Delete
-                    </button>
-                </div>
-            </div>
+        <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-500">
+            <button
+                onClick={() => router.back()}
+                className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest mb-10 hover:text-blue-600 transition-colors"
+            >
+                <ArrowLeft size={16} /> Cancel Editing
+            </button>
 
             <PageHeader
-                title={task.title}
-                subtitle={task.description || 'No description provided for this asset.'}
-                icon={<Briefcase size={14} />}
+                title="Edit Task"
+                subtitle="ปรับปรุงรายละเอียดและกำหนดส่งให้แม่นยำนะค๊ะ"
+                icon={<Edit3 size={16} />}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mt-12">
-                {/* Left Column: Details & Sub-tasks */}
-                <div className="lg:col-span-8 space-y-10">
-                    {task.image_url && (
-                        <div className="relative w-full h-[450px] rounded-[3rem] overflow-hidden shadow-2xl shadow-slate-200/50">
-                            <NextImage src={task.image_url} alt="Cover" fill className="object-cover" unoptimized />
-                        </div>
-                    )}
-
-                    <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-xl space-y-10">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-black text-slate-300 uppercase flex items-center gap-1"><User size={12} /> Assignee</span>
-                                <p className="text-sm font-bold text-slate-700">{task.assignee_name}</p>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-black text-slate-300 uppercase flex items-center gap-1"><Calendar size={12} /> Created At</span>
-                                <p className="text-sm font-bold text-slate-700">{new Date(task.created_at).toLocaleDateString('th-TH')}</p>
-                            </div>
-                        </div>
-
-                        <div className="pt-10 border-t border-slate-50">
-                            <h3 className="font-black text-slate-800 mb-6 italic flex items-center gap-2">
-                                <CheckCircle2 size={18} className="text-blue-500" /> Milestone Checkpoints
-                            </h3>
-                            <div className="space-y-3">
-                                {subTasks.map(st => (
-                                    <button
-                                        key={st.id}
-                                        onClick={() => handleToggleSubTask(st.id, st.is_completed)}
-                                        className="w-full flex items-center gap-4 p-5 bg-slate-50 rounded-2xl hover:bg-blue-50 transition-all group"
-                                    >
-                                        <div className={`transition-colors ${st.is_completed ? 'text-green-500' : 'text-slate-200 group-hover:text-blue-300'}`}>
-                                            <CheckCircle2 size={24} />
-                                        </div>
-                                        <span className={`text-sm font-bold ${st.is_completed ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
-                                            {st.title}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Status & Discussion */}
-                <div className="lg:col-span-4 space-y-10">
-                    <TaskStatusCard
-                        isCompleted={task.is_completed}
-                        progress={progress}
-                        onToggle={async () => {
-                            await supabase.from('tasks').update({ is_completed: !task.is_completed }).eq('id', task.id)
-                            setTask({ ...task, is_completed: !task.is_completed })
-                        }}
-                    />
-                    <DiscussionBoard
-                        comments={comments}
-                        onSendMessage={handleSendMessage}
-                        loading={false}
-                    />
-                </div>
-            </div>
+            {initialData && (
+                <TaskForm
+                    projects={projects}
+                    initialData={initialData}
+                    onSubmit={handleUpdate}
+                    loading={loading}
+                />
+            )}
         </div>
     )
 }

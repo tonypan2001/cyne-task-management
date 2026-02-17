@@ -22,6 +22,7 @@ export interface Task {
     creator_name: string | null;
     assignee_name: string | null;
     is_completed: boolean;
+    due_date: string | null;
 }
 
 export interface TaskComment {
