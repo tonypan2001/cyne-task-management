@@ -37,8 +37,9 @@ export interface TaskFormData {
     description: string;
     selectedProjectId: string;
     assigneeName: string;
-    subTasks: { title: string }[];
+    subTasks: { id?: string; title: string }[]; // เพิ่ม id เพื่อเช็คว่าเป็นงานเก่าหรือใหม่
     imageFile: File | null;
+    due_date: string; // เพิ่มฟิลด์นี้ค่ะ
 }
 
 export interface TaskStatusCardProps {
