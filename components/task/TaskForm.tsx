@@ -1,34 +1,58 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, UserPlus, Camera, X, Circle, Briefcase, FolderPlus } from 'lucide-react'
+import { Plus, UserPlus, Camera, X, Circle, Briefcase, Loader2 } from 'lucide-react'
 import NextImage from 'next/image'
-import { Project, SubTask } from '@/types/task'
+import { Project, TaskFormData } from '@/types/task'
 
 interface TaskFormProps {
-    initialData?: any;
+    initialData?: Partial<TaskFormData>;
     projects: Project[];
-    onSubmit: (data: any) => void;
+    onSubmit: (data: TaskFormData) => void;
     loading: boolean;
 }
 
 export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormProps) => {
     const [title, setTitle] = useState(initialData?.title || '')
     const [description, setDescription] = useState(initialData?.description || '')
-    const [selectedProjectId, setSelectedProjectId] = useState(initialData?.project_id || '')
-    const [assigneeName, setAssigneeName] = useState(initialData?.assignee_name || '')
+    const [selectedProjectId, setSelectedProjectId] = useState(initialData?.selectedProjectId || '')
+    const [assigneeName, setAssigneeName] = useState(initialData?.assigneeName || '')
     const [subTasks, setSubTasks] = useState<{ title: string }[]>(initialData?.subTasks || [])
     const [newSubTask, setNewSubTask] = useState('')
     const [imageFile, setImageFile] = useState<File | null>(null)
-    const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.image_url || null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setImageFile(file)
+            setPreviewUrl(URL.createObjectURL(file))
+        }
+    }
+
+    const handleAddSubTask = () => {
+        if (newSubTask.trim()) {
+            setSubTasks([...subTasks, { title: newSubTask.trim() }])
+            setNewSubTask('')
+        }
+    }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        onSubmit({ title, description, selectedProjectId, assigneeName, subTasks, imageFile })
+        if (!selectedProjectId) return alert('กรุณาเลือกโปรเจกต์ก่อนนะค๊ะ')
+
+        onSubmit({
+            title,
+            description,
+            selectedProjectId,
+            assigneeName,
+            subTasks,
+            imageFile
+        })
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-10 rounded-[3rem] border border-slate-100 shadow-2xl">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/40">
             {/* Project Selection */}
             <div className="space-y-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -56,7 +80,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormP
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assignee</label>
                     <div className="relative">
                         <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                        <input type="text" placeholder="Who's working on this?" value={assigneeName} onChange={e => setAssigneeName(e.target.value)}
+                        <input type="text" placeholder="Assign to..." value={assigneeName} onChange={e => setAssigneeName(e.target.value)}
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 rounded-2xl border-none outline-none font-bold text-slate-700 text-sm" />
                     </div>
                 </div>
@@ -64,14 +88,43 @@ export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormP
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sub-tasks</label>
                     <div className="flex gap-2">
                         <input className="flex-1 px-5 py-4 bg-slate-50 rounded-2xl outline-none text-sm font-bold"
-                            placeholder="Next step..." value={newSubTask} onChange={e => setNewSubTask(e.target.value)} />
-                        <button type="button" onClick={() => { if (newSubTask) setSubTasks([...subTasks, { title: newSubTask }]); setNewSubTask('') }} className="bg-slate-900 text-white px-5 rounded-2xl"><Plus size={20} /></button>
+                            placeholder="Next step..." value={newSubTask} onChange={e => setNewSubTask(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubTask())} />
+                        <button type="button" onClick={handleAddSubTask} className="bg-slate-900 text-white px-5 rounded-2xl"><Plus size={20} /></button>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] hover:bg-slate-900 transition-all shadow-xl">
-                {loading ? 'Processing...' : 'Save Task'}
+            {subTasks.length > 0 && (
+                <div className="space-y-2 bg-slate-50/50 p-4 rounded-3xl">
+                    {subTasks.map((st, i) => (
+                        <div key={i} className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100">
+                            <Circle size={14} className="text-slate-300" />
+                            <span className="flex-1 text-sm font-bold text-slate-600">{st.title}</span>
+                            <button type="button" onClick={() => setSubTasks(subTasks.filter((_, idx) => idx !== i))}><X size={14} className="text-slate-300" /></button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <div className="pt-6 border-t border-slate-50">
+                {previewUrl ? (
+                    <div className="relative w-64 h-40 rounded-3xl overflow-hidden shadow-lg border border-slate-100">
+                        <NextImage src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
+                        <button type="button" onClick={() => { setPreviewUrl(null); setImageFile(null); }} className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-xl text-red-500"><X size={16} /></button>
+                    </div>
+                ) : (
+                    <label className="flex flex-col items-center justify-center w-64 h-32 bg-slate-50 border-2 border-dashed border-slate-100 rounded-3xl cursor-pointer hover:bg-slate-100 transition-all">
+                        <Camera size={24} className="text-slate-300 mb-2" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase">Add Attachment</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                    </label>
+                )}
+            </div>
+
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-200">
+                {loading ? <Loader2 className="animate-spin" /> : <Plus size={20} />}
+                {loading ? 'PROCESSING...' : 'CONFIRM & CREATE TASK'}
             </button>
         </form>
     )
