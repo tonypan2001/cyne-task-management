@@ -40,3 +40,9 @@ export interface TaskFormData {
     subTasks: { title: string }[];
     imageFile: File | null;
 }
+
+export interface TaskStatusCardProps {
+    isCompleted: boolean;
+    progress: number;
+    onToggle: () => void;
+}
