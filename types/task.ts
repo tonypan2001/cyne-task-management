@@ -1,16 +1,16 @@
 export interface Project {
     id: string;
     name: string;
-  }
-  
-  export interface SubTask {
+}
+
+export interface SubTask {
     id: string;
     task_id: string;
     title: string;
     is_completed: boolean;
-  }
-  
-  export interface Task {
+}
+
+export interface Task {
     id: string;
     title: string;
     description: string | null;
@@ -22,12 +22,21 @@ export interface Project {
     creator_name: string | null;
     assignee_name: string | null;
     is_completed: boolean;
-  }
-  
-  export interface TaskComment {
+}
+
+export interface TaskComment {
     id: string;
     task_id: string;
     user_id: string;
     content: string;
     created_at: string;
-  }
+}
+
+export interface TaskFormData {
+    title: string;
+    description: string;
+    selectedProjectId: string;
+    assigneeName: string;
+    subTasks: { title: string }[];
+    imageFile: File | null;
+}
