@@ -7,8 +7,8 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, RotateCcw } from '
 
 interface WeeklyCalendarProps {
     tasks: Task[]
-    referenceDate: Date // ✨ รับมาจาก Page
-    onDateChange: (date: Date) => void // ✨ ฟังก์ชันส่งค่ากลับไป Page
+    referenceDate: Date
+    onDateChange: (date: Date) => void
 }
 
 const getDayColor = (dayIndex: number) => {
@@ -28,21 +28,22 @@ const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3
 
 export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCalendarProps) => {
 
-    // ✨ คำนวณวันทั้ง 7 โดยอ้างอิงจาก referenceDate ที่ได้รับมาจาก Props
+    // ✨ คำนวณวันทั้ง 7 โดยใช้ Local Time เพื่อไม่ให้เลื่อน 1 วันค๊ะ
     const days = useMemo(() => {
-        const d = new Date(referenceDate)
-        const day = d.getDay()
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1) // เริ่มที่วันจันทร์
-        const monday = new Date(d.setDate(diff))
+        const startOfWeek = new Date(referenceDate)
+        const day = startOfWeek.getDay()
+        // ปรับให้เริ่มที่วันจันทร์ (ถ้าเป็นวันอาทิตย์ให้ถอยไป 6 วัน)
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+        startOfWeek.setDate(diff)
+        startOfWeek.setHours(0, 0, 0, 0)
 
         return Array.from({ length: 7 }, (_, i) => {
-            const date = new Date(monday)
-            date.setDate(monday.getDate() + i)
+            const date = new Date(startOfWeek)
+            date.setDate(startOfWeek.getDate() + i)
             return date
         })
     }, [referenceDate])
 
-    // ✨ Handlers สำหรับเลื่อนสัปดาห์ (ส่งค่ากลับไป Update ที่หน้า Page)
     const nextWeek = () => {
         const next = new Date(referenceDate)
         next.setDate(next.getDate() + 7)
@@ -72,7 +73,6 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
                     </div>
                 </div>
 
-                {/* ✨ Navigation Controls */}
                 <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                     <button onClick={prevWeek} className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-slate-400 hover:text-blue-600 transition-all">
                         <ChevronLeft size={18} />
@@ -89,8 +89,17 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
             <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
                 {days.map((date) => {
                     const dayIndex = date.getDay()
-                    const dateString = date.toISOString().split('T')[0]
-                    const isToday = new Date().toISOString().split('T')[0] === dateString
+
+                    // ✨ แก้จุดตาย: สร้าง Date String จาก Local Time ไม่ใช้ ISOString ค๊ะ
+                    const YYYY = date.getFullYear()
+                    const MM = String(date.getMonth() + 1).padStart(2, '0')
+                    const DD = String(date.getDate()).padStart(2, '0')
+                    const dateString = `${YYYY}-${MM}-${DD}`
+
+                    const todayObj = new Date()
+                    const isToday = todayObj.getFullYear() === YYYY &&
+                        todayObj.getMonth() === date.getMonth() &&
+                        todayObj.getDate() === date.getDate()
 
                     const tasksOnDay = tasks
                         .filter(t => t.due_date === dateString)
