@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { Task, Project } from '@/types/task'
 import { TaskCard } from '@/components/task/TaskCard'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -89,6 +90,8 @@ export default function DashboardPage() {
           </Link>
         </div>
       </PageHeader>
+
+      <WeeklyCalendar tasks={tasks} />
 
       {/* ✨ 4. Project Filter Tabs */}
       <div className="flex items-center gap-3 overflow-x-auto pb-4 scrollbar-hide">
