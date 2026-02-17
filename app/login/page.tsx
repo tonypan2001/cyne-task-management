@@ -53,7 +53,7 @@ export default function AuthPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 text-slate-800">
-            <div className="max-w-md w-full bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-10">
+            <div className="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-10">
 
                 {/* Logo & Header */}
                 <div className="text-center mb-8">

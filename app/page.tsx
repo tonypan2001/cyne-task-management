@@ -77,7 +77,7 @@ export default function DashboardPage() {
             <input
               type="text"
               placeholder="ค้นหางานหรือชื่อคน..."
-              className="w-full pl-14 pr-6 py-4 bg-white rounded-[1.5rem] border-none shadow-2xl shadow-slate-200/40 outline-none font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
+              className="w-full pl-14 pr-6 py-4 bg-white rounded-3xl border-none shadow-2xl shadow-slate-200/40 outline-none font-bold text-sm focus:ring-4 focus:ring-blue-500/5 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

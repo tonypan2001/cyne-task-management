@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Layout, AlignLeft, UserPlus, CheckCircle2, Loader2, ArrowLeft, Save } from 'lucide-react'
+import { Layout, CheckCircle2, Loader2, ArrowLeft, Save } from 'lucide-react'
 
 export default function EditTaskPage() {
     const { id } = useParams()

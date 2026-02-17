@@ -122,7 +122,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, loading }: TaskFormP
                 )}
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-200">
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-black py-5 rounded-4xl flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-xl shadow-blue-200">
                 {loading ? <Loader2 className="animate-spin" /> : <Plus size={20} />}
                 {loading ? 'PROCESSING...' : 'CONFIRM & CREATE TASK'}
             </button>
