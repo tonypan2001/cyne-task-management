@@ -90,11 +90,11 @@ export default function DashboardPage() {
         </Link>
       </PageHeader>
 
-      <MonthlySummary
+      {/* <MonthlySummary
         tasks={tasks}
         projects={projects}
         currentReferenceDate={referenceDate}
-      />
+      /> */}
 
       <MonthlyGoals tasks={tasks} projects={projects} currentReferenceDate={referenceDate} />
 
