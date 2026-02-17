@@ -1,19 +1,7 @@
 import type { Metadata } from 'next'
-import localFont from 'next/font/local'
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
-
-// ✨ การตั้งค่าฟอนต์ LINE Seed Sans TH
-const lineSeed = localFont({
-  src: [
-    { path: '../public/fonts/LINESeedSansTH_W_Th.woff2', weight: '100', style: 'normal' },
-    { path: '../public/fonts/LINESeedSansTH_W_Rg.woff2', weight: '400', style: 'normal' },
-    { path: '../public/fonts/LINESeedSansTH_W_Bd.woff2', weight: '700', style: 'normal' },
-    { path: '../public/fonts/LINESeedSansTH_W_XBd.woff2', weight: '800', style: 'normal' },
-    { path: '../public/fonts/LINESeedSansTH_W_He.woff2', weight: '900', style: 'normal' },
-  ],
-  variable: '--font-line-seed',
-})
+import { lineSeed } from './fonts'
 
 export const metadata: Metadata = {
   title: 'Cyne | Creative Management',
@@ -29,13 +17,20 @@ export default function RootLayout({
     <html lang="th" className={`${lineSeed.variable}`}>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
         <div className="flex min-h-screen">
-          {/* ✨ เพิ่ม Sidebar ไว้ที่ด้านซ้าย */}
-          <Sidebar />
 
-          {/* ✨ ส่วนเนื้อหาหลักจะอยู่ด้านขวาและเลื่อนได้ (Scrollable) */}
-          <main className="flex-1 overflow-y-auto h-screen p-4 md:p-8">
-            {children}
+          {/* ✨ กำหนดความกว้างให้ชัดเจน (เช่น w-64 คือ 256px) 
+              และใช้ shrink-0 เพื่อไม่ให้ flex บีบ Sidebar จนเพี้ยนค่ะ */}
+          <aside className="w-64 shrink-0 border-r border-slate-100 hidden md:block">
+            <Sidebar />
+          </aside>
+
+          {/* ส่วนเนื้อหาจะขยับไปอยู่ต่อจากความกว้าง 64 ของ Sidebar ทันทีค่ะ */}
+          <main className="flex-1 min-w-0 h-screen overflow-y-auto p-6 md:p-10 lg:p-12">
+            <div className="max-w-[1440px] mx-auto">
+              {children}
+            </div>
           </main>
+
         </div>
       </body>
     </html>
