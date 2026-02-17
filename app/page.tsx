@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, LayoutGrid, Filter, Plus, Flame, CheckCircle2 } from 'lucide-react'
+import { Search, LayoutGrid, Filter, Plus, Flame, CheckCircle2, X } from 'lucide-react'
 import Link from 'next/link'
 
 // ✨ Import Components & Types
@@ -61,9 +61,9 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4 font-sans">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="font-black uppercase tracking-widest text-[10px] italic font-sans">Syncing Board...</p>
+        <p className="font-black uppercase tracking-widest text-[10px] italic">Syncing Board...</p>
       </div>
     )
   }
@@ -71,7 +71,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-[1440px] mx-auto space-y-10 pb-20 animate-in fade-in duration-700 px-4 md:px-8">
 
-      {/* 3. Page Header (ปรับให้เหลือแค่หัวข้อและปุ่มเพิ่มงาน) */}
+      {/* 3. Page Header */}
       <PageHeader
         title="Control Center"
         subtitle={`Urgent: ${groupedTasks.urgent.length} / Total Active: ${groupedTasks.urgent.length + groupedTasks.stream.length}`}
@@ -89,7 +89,7 @@ export default function DashboardPage() {
       {/* 4. Weekly Calendar */}
       <WeeklyCalendar tasks={tasks} />
 
-      {/* 5. Filter & Search Section ✨ ย้ายมาไว้ด้วยกันตรงนี้ค่ะ */}
+      {/* 5. Filter & Search Section */}
       <div className="space-y-4">
         {/* Project Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -119,16 +119,24 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ✨ Search Bar - ย้ายมาอยู่ใต้ Filter แล้วนะค๊ะ */}
+        {/* ✨ Search Bar - เพิ่มปุ่ม Clear (X) */}
         <div className="relative w-full max-w-md group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={14} />
           <input
             type="text"
             placeholder="Quick search assets or assignee..."
-            className="w-full pl-10 pr-4 py-3 bg-white/60 rounded-xl border border-slate-100 shadow-sm outline-none font-bold text-[11px] focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-blue-200 transition-all placeholder:text-slate-300"
+            className="w-full pl-10 pr-10 py-3 bg-white/60 rounded-xl border border-slate-100 shadow-sm outline-none font-bold text-[11px] focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-blue-200 transition-all placeholder:text-slate-300"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors p-1"
+            >
+              <X size={14} strokeWidth={3} />
+            </button>
+          )}
         </div>
       </div>
 
