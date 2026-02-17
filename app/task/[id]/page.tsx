@@ -6,10 +6,9 @@ import { createClient } from '@/lib/supabase'
 import NextImage from 'next/image'
 import {
     ArrowLeft, Calendar, CheckCircle2,
-    Circle, MessageSquare, Send, Trash2, Clock, User
+    Circle, MessageSquare, Send, Trash2, Clock, User, ShieldCheck
 } from 'lucide-react'
 
-// --- 1. กำหนด Interfaces ---
 interface SubTask {
     id: string
     title: string
@@ -31,7 +30,8 @@ interface Task {
     image_url: string | null
     created_at: string
     user_id: string
-    assigned_to: string | null
+    creator_name: string | null
+    assignee_name: string | null
 }
 
 export default function TaskDetailPage() {
@@ -47,7 +47,6 @@ export default function TaskDetailPage() {
     const [loading, setLoading] = useState(true)
     const [isSending, setIsSending] = useState(false)
 
-    // --- 2. ฟังก์ชันดึงข้อมูล (Fetch) ---
     const fetchData = useCallback(async () => {
         try {
             const [taskRes, subRes, commentRes] = await Promise.all([
@@ -60,7 +59,7 @@ export default function TaskDetailPage() {
             if (subRes.data) setSubTasks(subRes.data)
             if (commentRes.data) setComments(commentRes.data)
         } catch (err) {
-            console.error('Error fetching task details:', err)
+            console.error(err)
         } finally {
             setLoading(false)
         }
@@ -70,172 +69,114 @@ export default function TaskDetailPage() {
         fetchData()
     }, [fetchData])
 
-    // --- 3. ฟังก์ชันจัดการ Sub-tasks ---
-    const toggleSubTask = async (subId: string, currentState: boolean) => {
-        const { error } = await supabase
-            .from('sub_tasks')
-            .update({ is_completed: !currentState })
-            .eq('id', subId)
+    const handleDeleteTask = async () => {
+        if (!confirm('คุณปันแน่ใจนะคะว่าจะลบงานนี้? ข้อมูลจะหายไปถาวรเลยนะค๊ะ')) return
 
+        const { error } = await supabase.from('tasks').delete().eq('id', id)
         if (!error) {
-            setSubTasks(prev => prev.map(st => st.id === subId ? { ...st, is_completed: !currentState } : st))
+            router.push('/')
+            router.refresh()
         }
     }
 
-    // --- 4. ฟังก์ชันจัดการ Comment ---
+    const toggleSubTask = async (subId: string, currentState: boolean) => {
+        const { error } = await supabase.from('sub_tasks').update({ is_completed: !currentState }).eq('id', subId)
+        if (!error) setSubTasks(prev => prev.map(st => st.id === subId ? { ...st, is_completed: !currentState } : st))
+    }
+
     const handleSendComment = async () => {
         if (!newComment.trim() || isSending) return
         setIsSending(true)
-
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนนะคะ')
-
-            const { error } = await supabase.from('task_comments').insert({
-                task_id: id,
-                user_id: user.id,
-                content: newComment.trim()
-            })
-
-            if (error) throw error
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { error } = await supabase.from('task_comments').insert({ task_id: id, user_id: user.id, content: newComment.trim() })
+        if (!error) {
             setNewComment('')
-            fetchData() // โหลดข้อมูลใหม่เพื่อแสดงคอมเมนต์ล่าสุด
-        } catch (err: unknown) {
-            alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการส่งค่ะ')
-        } finally {
-            setIsSending(false)
+            fetchData()
         }
+        setIsSending(false)
     }
 
-    if (loading) return <div className="p-10 text-center font-medium text-slate-500">กำลังดึงข้อมูลงานของคุณปันนะค๊ะ...</div>
-    if (!task) return <div className="p-10 text-center text-red-500">ไม่พบข้อมูลงานชิ้นนี้ค่ะ</div>
+    if (loading) return <div className="p-10 text-center font-medium text-slate-400">กำลังเตรียมข้อมูล...</div>
+    if (!task) return <div className="p-10 text-center text-red-500">ไม่พบงานนี้ค่ะ</div>
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 pb-10">
-            {/* Top Bar */}
+        <div className="max-w-6xl mx-auto space-y-8 pb-20">
             <div className="flex items-center justify-between">
-                <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-all font-medium">
-                    <ArrowLeft size={20} />
-                    กลับไปหน้า Dashboard
+                <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-slate-800 transition-all font-semibold text-sm uppercase tracking-wider">
+                    <ArrowLeft size={18} /> Back to Dashboard
                 </button>
-                <div className="flex gap-2">
-                    <button className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
-                        <Trash2 size={20} />
-                    </button>
-                </div>
+                <button onClick={handleDeleteTask} className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-2xl transition-all font-bold text-sm">
+                    <Trash2 size={18} /> ลบงานนี้
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* คอลัมน์ซ้าย: ข้อมูลงาน & Sub-tasks */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border border-slate-100 shadow-xl shadow-slate-200/30">
-                        <div className="flex flex-wrap gap-3 mb-6 items-center">
-                            <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-widest">
-                                {task.category || 'GENERAL'}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl shadow-slate-200/40">
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                            <span className="px-5 py-2 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase tracking-[0.2em]">
+                                {task.category}
                             </span>
-                            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                                <Calendar size={14} />
-                                {new Date(task.created_at).toLocaleDateString('th-TH')}
+                            <div className="flex gap-6">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-slate-100 p-2 rounded-xl text-slate-500"><ShieldCheck size={16} /></div>
+                                    <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase">Created By</span><span className="text-xs font-bold">{task.creator_name?.split('@')[0]}</span></div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-blue-100 p-2 rounded-xl text-blue-600"><User size={16} /></div>
+                                    <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase">Assignee</span><span className="text-xs font-bold">{task.assignee_name}</span></div>
+                                </div>
                             </div>
                         </div>
 
-                        <h1 className="text-3xl font-bold text-slate-800 mb-4">{task.title}</h1>
-                        <p className="text-slate-600 leading-relaxed whitespace-pre-wrap mb-8">{task.description}</p>
+                        <h1 className="text-4xl font-black text-slate-800 mb-6 leading-tight">{task.title}</h1>
+                        <p className="text-slate-500 text-lg leading-relaxed mb-10">{task.description}</p>
 
                         {task.image_url && (
-                            <div className="relative w-full h-[400px] rounded-4xl overflow-hidden border border-slate-50">
-                                <NextImage src={task.image_url} alt={task.title} fill className="object-cover" unoptimized />
+                            <div className="relative w-full h-[450px] rounded-[2.5rem] overflow-hidden shadow-inner bg-slate-50">
+                                <NextImage src={task.image_url} alt={task.title} fill className="object-contain p-4" unoptimized />
                             </div>
                         )}
                     </div>
 
-                    {/* Sub-tasks */}
-                    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-lg shadow-slate-200/20">
-                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-800">
-                            <CheckCircle2 className="text-green-500" size={20} />
-                            ขั้นตอนการทำงาน
-                        </h2>
-                        <div className="space-y-2">
+                    <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-lg shadow-slate-200/20">
+                        <h2 className="text-xl font-bold mb-8 flex items-center gap-3"><CheckCircle2 className="text-blue-500" size={24} /> Roadmap Steps</h2>
+                        <div className="space-y-3">
                             {subTasks.map((st) => (
-                                <button
-                                    key={st.id}
-                                    onClick={() => toggleSubTask(st.id, st.is_completed)}
-                                    className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all text-left group"
-                                >
-                                    {st.is_completed ? (
-                                        <CheckCircle2 className="text-green-500 shrink-0" size={20} />
-                                    ) : (
-                                        <Circle className="text-slate-200 shrink-0 group-hover:text-blue-400" size={20} />
-                                    )}
-                                    <span className={`text-sm font-medium ${st.is_completed ? 'text-slate-300 line-through' : 'text-slate-600'}`}>
-                                        {st.title}
-                                    </span>
+                                <button key={st.id} onClick={() => toggleSubTask(st.id, st.is_completed)} className="w-full flex items-center gap-4 p-5 rounded-[1.5rem] hover:bg-slate-50 transition-all text-left group border border-transparent hover:border-slate-100">
+                                    {st.is_completed ? <CheckCircle2 className="text-green-500" size={24} /> : <Circle className="text-slate-200 group-hover:text-blue-400" size={24} />}
+                                    <span className={`text-base font-semibold ${st.is_completed ? 'text-slate-300 line-through' : 'text-slate-600'}`}>{st.title}</span>
                                 </button>
                             ))}
-                            {subTasks.length === 0 && <p className="text-slate-400 text-sm text-center py-4 italic">ไม่มีรายการย่อย</p>}
                         </div>
                     </div>
                 </div>
 
-                {/* คอลัมน์ขวา: สถิติ & คอมเมนต์ */}
-                <div className="space-y-6">
-                    <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-xl">
-                        <h3 className="font-bold text-sm text-slate-400 uppercase tracking-widest mb-4">ความคืบหน้า</h3>
-                        <div className="text-5xl font-black mb-4">
-                            {subTasks.length > 0 ? Math.round((subTasks.filter(s => s.is_completed).length / subTasks.length) * 100) : 0}%
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                            <div
-                                className="bg-blue-500 h-full transition-all duration-500"
-                                style={{ width: `${subTasks.length > 0 ? (subTasks.filter(s => s.is_completed).length / subTasks.length) * 100 : 0}%` }}
-                            />
+                <div className="space-y-8">
+                    <div className="bg-slate-900 text-white rounded-[3rem] p-10 shadow-2xl shadow-blue-900/20">
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Completion Rate</h3>
+                        <div className="text-6xl font-black mb-6">{subTasks.length > 0 ? Math.round((subTasks.filter(s => s.is_completed).length / subTasks.length) * 100) : 0}<span className="text-2xl text-blue-500">%</span></div>
+                        <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full transition-all duration-700" style={{ width: `${subTasks.length > 0 ? (subTasks.filter(s => s.is_completed).length / subTasks.length) * 100 : 0}%` }} />
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/20 flex flex-col h-[500px]">
-                        <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <MessageSquare size={18} className="text-blue-500" />
-                            คอมเมนต์
-                        </h3>
-
-                        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 scrollbar-hide">
+                    <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-xl flex flex-col h-[600px]">
+                        <h3 className="font-bold text-slate-800 mb-8 flex items-center gap-2"><MessageSquare size={20} className="text-blue-500" /> Discussion</h3>
+                        <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2">
                             {comments.map((c) => (
-                                <div key={c.id} className="group">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="bg-slate-100 p-1 rounded-md">
-                                            <User size={10} className="text-slate-400" />
-                                        </div>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            {c.user_id === task.user_id ? 'OWNER' : 'GUEST'}
-                                        </span>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-2xl rounded-tl-none border border-slate-100">
-                                        <p className="text-xs text-slate-600 leading-relaxed">{c.content}</p>
-                                        <div className="text-[8px] text-slate-300 mt-2 flex items-center gap-1 uppercase">
-                                            <Clock size={8} /> {new Date(c.created_at).toLocaleTimeString('th-TH')}
-                                        </div>
+                                <div key={c.id} className="space-y-2">
+                                    <div className="flex items-center gap-2"><span className="text-[10px] font-black text-slate-300 uppercase">{c.user_id === task.user_id ? 'Author' : 'Member'}</span></div>
+                                    <div className="bg-slate-50 p-5 rounded-[1.5rem] rounded-tl-none border border-slate-100">
+                                        <p className="text-sm text-slate-600 font-medium">{c.content}</p>
                                     </div>
                                 </div>
                             ))}
-                            {comments.length === 0 && <p className="text-slate-300 text-[10px] text-center py-10 italic">ยังไม่มีคอมเมนต์ค่ะ</p>}
                         </div>
-
                         <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="พิมพ์ข้อความ..."
-                                className="w-full pl-5 pr-12 py-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-xs"
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
-                            />
-                            <button
-                                onClick={handleSendComment}
-                                disabled={isSending || !newComment.trim()}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all disabled:bg-slate-100 disabled:text-slate-300"
-                            >
-                                <Send size={14} />
-                            </button>
+                            <input type="text" placeholder="Write a message..." className="w-full pl-6 pr-14 py-5 bg-slate-50 border-none rounded-[1.5rem] outline-none focus:ring-2 focus:ring-blue-500/10 transition-all text-sm font-medium" value={newComment} onChange={(e) => setNewComment(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendComment()} />
+                            <button onClick={handleSendComment} disabled={isSending || !newComment.trim()} className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg"><Send size={16} /></button>
                         </div>
                     </div>
                 </div>
