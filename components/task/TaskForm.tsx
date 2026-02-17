@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, ChangeEvent, FormEvent } from 'react'
+import { useState, ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import {
     Plus, UserPlus, Camera, X, Circle,
-    Briefcase, Loader2, Calendar as CalendarIcon, Trash2
+    Briefcase, Loader2, Calendar as CalendarIcon, Trash2, CheckCircle2
 } from 'lucide-react'
 import NextImage from 'next/image'
 import { TaskFormProps } from '@/types/task'
@@ -15,10 +15,11 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
     const [selectedProjectId, setSelectedProjectId] = useState(initialData?.selectedProjectId || '')
     const [assigneeName, setAssigneeName] = useState(initialData?.assigneeName || '')
     const [dueDate, setDueDate] = useState(initialData?.due_date || '')
+    const [priority, setPriority] = useState<'High' | 'Medium' | 'Low'>(initialData?.priority || 'Medium')
     const [subTasks, setSubTasks] = useState<{ title: string }[]>(initialData?.subTasks || [])
     const [newSubTask, setNewSubTask] = useState('')
     const [imageFile, setImageFile] = useState<File | null>(null)
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.image_url || null)
 
     // Project Management States
     const [isAddingProject, setIsAddingProject] = useState(false)
@@ -41,7 +42,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
             if (onDeleteProject) {
                 const success = await onDeleteProject(projectId)
                 if (success && selectedProjectId === projectId) {
-                    setSelectedProjectId('') // ล้างค่าที่เลือกไว้ถ้าโปรเจกต์นั้นโดนลบ
+                    setSelectedProjectId('')
                 }
             }
         }
@@ -62,6 +63,13 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
         }
     }
 
+    const handleKeyDownSubTask = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            handleAddSubTask()
+        }
+    }
+
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
         if (!selectedProjectId) {
@@ -76,7 +84,8 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
             assigneeName,
             subTasks,
             imageFile,
-            due_date: dueDate
+            due_date: dueDate,
+            priority // ✨ ส่ง priority ไปด้วยนะค๊ะ
         })
     }
 
@@ -105,7 +114,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                                 type="button"
                                 onClick={() => setSelectedProjectId(p.id)}
                                 className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all pr-12 ${selectedProjectId === p.id
-                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
+                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 scale-105'
                                     : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-transparent'
                                     }`}
                             >
@@ -123,7 +132,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                 </div>
 
                 {isAddingProject && (
-                    <div className="flex gap-2 mt-4 animate-in slide-in-from-top-2 duration-300 bg-slate-50 p-3 rounded-3xl border border-blue-100">
+                    <div className="flex gap-2 mt-4 animate-in slide-in-from-top-2 duration-300 bg-slate-50 p-3 rounded-3xl border border-blue-100 shadow-inner">
                         <input
                             type="text"
                             placeholder="Project Name..."
@@ -134,7 +143,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         <button
                             type="button"
                             onClick={handleQuickAddProject}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition-colors"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-900 transition-colors shadow-lg shadow-blue-100"
                         >
                             Confirm
                         </button>
@@ -142,7 +151,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                 )}
             </div>
 
-            {/* 2. Main Content & Deadline */}
+            {/* 2. Main Content, Deadline & Priority */}
             <div className="space-y-8 pt-10 border-t border-slate-50">
                 <input
                     required
@@ -152,7 +161,8 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                     onChange={e => setTitle(e.target.value)}
                 />
 
-                <div className="flex flex-wrap gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Deadline */}
                     <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
                         <CalendarIcon size={18} className="text-blue-500" />
                         <div className="flex flex-col">
@@ -166,7 +176,30 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         </div>
                     </div>
 
-                    <div className="flex-1 min-w-[200px] flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
+                    {/* Priority Selector ✨ เพิ่มใหม่ */}
+                    <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50">
+                        <div className="flex flex-col w-full">
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-2 ml-1">Priority</span>
+                            <div className="flex gap-1 bg-white p-1 rounded-2xl border border-slate-100">
+                                {(['High', 'Medium', 'Low'] as const).map((p) => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setPriority(p)}
+                                        className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all ${priority === p
+                                                ? (p === 'High' ? 'bg-red-500 text-white shadow-md' : p === 'Low' ? 'bg-slate-500 text-white' : 'bg-blue-600 text-white')
+                                                : 'text-slate-300 hover:text-slate-500'
+                                            }`}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Assignee */}
+                    <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
                         <UserPlus size={18} className="text-slate-400" />
                         <div className="flex flex-col flex-1">
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Assignee</span>
@@ -191,7 +224,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
 
             {/* 3. Sub-tasks */}
             <div className="space-y-6 pt-10 border-t border-slate-50">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Step list</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] ml-1">Step list (Roadmap)</label>
 
                 <div className="space-y-3">
                     {subTasks.map((st, i) => (
@@ -216,12 +249,12 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                 <div className="flex gap-3">
                     <input
                         className="flex-1 px-6 py-5 bg-slate-50 rounded-3xl border-none outline-none text-sm font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 transition-all"
-                        placeholder="Next step..."
+                        placeholder="Next step... (Press Enter)"
                         value={newSubTask}
                         onChange={e => setNewSubTask(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubTask())}
+                        onKeyDown={handleKeyDownSubTask}
                     />
-                    <button type="button" onClick={handleAddSubTask} className="bg-slate-900 text-white px-8 rounded-3xl hover:bg-blue-600 transition-all">
+                    <button type="button" onClick={handleAddSubTask} className="bg-slate-900 text-white px-8 rounded-3xl hover:bg-blue-600 transition-all shadow-lg active:scale-95">
                         <Plus size={24} />
                     </button>
                 </div>
@@ -231,12 +264,12 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
             <div className="pt-10 border-t border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-8">
                 <div className="flex-1">
                     {previewUrl ? (
-                        <div className="relative w-48 h-32 rounded-4xl overflow-hidden shadow-xl border border-white ring-8 ring-slate-50">
+                        <div className="relative w-48 h-32 rounded-[2.5rem] overflow-hidden shadow-xl border border-white ring-8 ring-slate-50">
                             <NextImage src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
-                            <button type="button" onClick={() => { setPreviewUrl(null); setImageFile(null); }} className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-xl text-red-500"><X size={14} /></button>
+                            <button type="button" onClick={() => { setPreviewUrl(null); setImageFile(null); }} className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-xl text-red-500 backdrop-blur-sm shadow-md"><X size={14} /></button>
                         </div>
                     ) : (
-                        <label className="flex flex-col items-center justify-center w-48 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-4xl cursor-pointer hover:bg-slate-100 transition-all group">
+                        <label className="flex flex-col items-center justify-center w-48 h-32 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] cursor-pointer hover:bg-slate-100 transition-all group">
                             <Camera size={24} className="text-slate-300 group-hover:text-blue-500 mb-2" />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Add Attachment</span>
                             <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
@@ -249,7 +282,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                     disabled={loading}
                     className="w-full md:w-auto px-12 py-6 bg-blue-600 text-white font-black text-[12px] uppercase tracking-[0.3em] rounded-4xl flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-2xl shadow-blue-200 active:scale-95 disabled:opacity-50"
                 >
-                    {loading ? <Loader2 className="animate-spin" /> : <Plus size={20} />}
+                    {loading ? <Loader2 className="animate-spin" /> : <CheckCircle2 size={20} />}
                     {loading ? 'Processing...' : 'Confirm & Publish'}
                 </button>
             </div>
