@@ -7,11 +7,15 @@ import { createClient } from '@/lib/supabase'
 import {
     LayoutDashboard, PlusSquare, LogOut, CheckCircle2, Layout as LogoIcon
 } from 'lucide-react'
+import { useAdmin } from '@/hook/useAdmin'
 
 export default function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const supabase = createClient()
+
+    // ✨ ใช้ adminLoading เพื่อรอสถานะการเช็คสิทธิ์ให้ชัวร์ก่อนค่ะ
+    const { isAdmin, loading: adminLoading } = useAdmin()
 
     const [displayName, setDisplayName] = useState<string>('Loading...')
 
@@ -54,21 +58,25 @@ export default function Sidebar() {
             <nav className="flex-1 px-4 space-y-1.5">
                 <p className="px-4 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Main Menu</p>
                 {menuItems.map((item) => {
+                    // ✨ 1. เช็คเงื่อนไข: ถ้าชื่อเมนูคือ "สร้างงานใหม่" และไม่ใช่แอดมิน ให้ข้ามไปเลยค่ะ
+                    if (item.name === 'สร้างงานใหม่' && !adminLoading && !isAdmin) {
+                        return null;
+                    }
+
                     const isActive = pathname === item.path
                     return (
                         <Link
                             key={item.path}
                             href={item.path}
                             className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${isActive
-                                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 translate-x-1'
-                                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:translate-x-1'
+                                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 translate-x-1'
+                                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-800 hover:translate-x-1'
                                 }`}
                         >
-                            {/* ✨ เปลี่ยนสีไอคอนตรงนี้เป็น text-blue-600 ถ้าไม่ Active ค่ะ */}
-                            <item.icon 
-                                size={18} 
-                                strokeWidth={isActive ? 2.5 : 2} 
-                                className={isActive ? 'text-white' : 'text-blue-600'} 
+                            <item.icon
+                                size={18}
+                                strokeWidth={isActive ? 2.5 : 2}
+                                className={isActive ? 'text-white' : 'text-blue-600'}
                             />
                             {item.name}
                         </Link>
