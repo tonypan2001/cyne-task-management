@@ -12,9 +12,12 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 import { MonthlyGoals } from '@/components/dashboard/MonthlyGoals'
 import { OverdueSection } from '@/components/dashboard/OverdueSection'
+import { useAdmin } from '@/hook/useAdmin'
 
 export default function DashboardPage() {
   const supabase = createClient()
+
+  const { isAdmin, loading: adminLoading } = useAdmin()
 
   // States
   const [tasks, setTasks] = useState<Task[]>([])
@@ -98,13 +101,16 @@ export default function DashboardPage() {
         subtitle={`Urgent: ${groupedTasks.urgent.length} / Total Active: ${groupedTasks.urgent.length + groupedTasks.stream.length}`}
         icon={<LayoutGrid size={16} />}
       >
-        <Link
-          href="/create"
-          className="bg-slate-900 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2.5 hover:bg-blue-600 transition-all shadow-lg active:scale-95 shrink-0"
-        >
-          <Plus size={20} />
-          <span className="text-[11px] font-black uppercase tracking-widest">New Task</span>
-        </Link>
+
+        {!adminLoading && isAdmin && (
+          <Link
+            href="/create"
+            className="bg-slate-900 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2.5 hover:bg-blue-600 transition-all shadow-lg active:scale-95 shrink-0"
+          >
+            <Plus size={20} />
+            <span className="text-[11px] font-black uppercase tracking-widest">New Task</span>
+          </Link>
+        )}
       </PageHeader>
 
       <MonthlyGoals tasks={tasks} projects={projects} currentReferenceDate={referenceDate} />
