@@ -7,8 +7,11 @@ import {
 } from 'lucide-react'
 import NextImage from 'next/image'
 import { TaskFormProps } from '@/types/task'
+import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Toast ค๊ะ
 
 export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDeleteProject, loading }: TaskFormProps) => {
+    const { showToast } = useToast() // ✨ เรียกใช้ระบบแจ้งเตือนค๊ะ
+
     // --- States ---
     const [title, setTitle] = useState(initialData?.title || '')
     const [description, setDescription] = useState(initialData?.description || '')
@@ -36,14 +39,14 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
         }
     }
 
-    const handleDeleteProject = async (e: React.MouseEvent, projectId: string, projectName: string) => {
+    // ✨ แก้ไขจุดนี้: ตัด confirm() ออก และส่งต่อไปให้หน้าหลักจัดการผ่าน Modal ค๊ะ
+    const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
         e.stopPropagation()
-        if (confirm(`คุณปันแน่ใจนะค๊ะว่าจะลบโปรเจกต์ "${projectName}"?`)) {
-            if (onDeleteProject) {
-                const success = await onDeleteProject(projectId)
-                if (success && selectedProjectId === projectId) {
-                    setSelectedProjectId('')
-                }
+        if (onDeleteProject) {
+            const success = await onDeleteProject(projectId)
+            // ถ้าลบสำเร็จ (ผ่าน Modal ในหน้าหลัก) และตรงกับที่เลือกอยู่ ให้ล้างค่าที่เลือกค๊ะ
+            if (success && selectedProjectId === projectId) {
+                setSelectedProjectId('')
             }
         }
     }
@@ -72,8 +75,10 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
+
+        // ✨ เปลี่ยนจาก alert() เป็น showToast() ค๊ะ
         if (!selectedProjectId) {
-            alert('กรุณาเลือกโปรเจกต์ก่อนนะค๊ะคุณปัน')
+            showToast('Missing Info', 'warning', 'กรุณาเลือกโปรเจกต์ก่อนดำเนินการนะค๊ะ')
             return
         }
 
@@ -85,7 +90,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
             subTasks,
             imageFile,
             due_date: dueDate,
-            priority // ✨ ส่ง priority ไปด้วยนะค๊ะ
+            priority
         })
     }
 
@@ -122,7 +127,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                             </button>
                             <button
                                 type="button"
-                                onClick={(e) => handleDeleteProject(e, p.id, p.name)}
+                                onClick={(e) => handleDeleteProject(e, p.id)} // ✨ ส่งแค่ id ไปให้หน้าหลักค๊ะ
                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                             >
                                 <Trash2 size={12} />
@@ -136,7 +141,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         <input
                             type="text"
                             placeholder="Project Name..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold px-4"
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold px-4 outline-none"
                             value={newProjectName}
                             onChange={(e) => setNewProjectName(e.target.value)}
                         />
@@ -162,7 +167,6 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Deadline */}
                     <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
                         <CalendarIcon size={18} className="text-blue-500" />
                         <div className="flex flex-col">
@@ -176,7 +180,6 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         </div>
                     </div>
 
-                    {/* Priority Selector ✨ เพิ่มใหม่ */}
                     <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50">
                         <div className="flex flex-col w-full">
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-2 ml-1">Priority</span>
@@ -187,8 +190,8 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                                         type="button"
                                         onClick={() => setPriority(p)}
                                         className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all ${priority === p
-                                                ? (p === 'High' ? 'bg-red-500 text-white shadow-md' : p === 'Low' ? 'bg-slate-500 text-white' : 'bg-blue-600 text-white')
-                                                : 'text-slate-300 hover:text-slate-500'
+                                            ? (p === 'High' ? 'bg-red-500 text-white shadow-md' : p === 'Low' ? 'bg-slate-500 text-white' : 'bg-blue-600 text-white')
+                                            : 'text-slate-300 hover:text-slate-500'
                                             }`}
                                     >
                                         {p}
@@ -198,7 +201,6 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         </div>
                     </div>
 
-                    {/* Assignee */}
                     <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
                         <UserPlus size={18} className="text-slate-400" />
                         <div className="flex flex-col flex-1">

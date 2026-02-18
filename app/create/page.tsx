@@ -7,12 +7,21 @@ import { Plus } from 'lucide-react'
 import { Project, TaskFormData } from '@/types/task'
 import { TaskForm } from '@/components/task/TaskForm'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { useToast } from '@/components/shared/ToastProvider'
+import { ConfirmModal } from '@/components/shared/ConfirmModal' // ✨ เพิ่มการนำเข้า Modal ค๊ะ
 
 export default function CreateTaskPage() {
     const supabase = createClient()
     const router = useRouter()
+    const { showToast } = useToast()
+
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(false)
+
+    // ✨ States สำหรับจัดการ Modal การลบโปรเจกต์
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+    const [isDeletingProject, setIsDeletingProject] = useState(false)
 
     const fetchProjects = useCallback(async () => {
         const { data } = await supabase.from('projects').select('id, name').order('name')
@@ -23,11 +32,10 @@ export default function CreateTaskPage() {
         fetchProjects()
     }, [fetchProjects])
 
-    // ✨ ฟังก์ชันสร้างโปรเจกต์ (พร้อมดัก Error ชื่อซ้ำ)
     const handleCreateProject = async (name: string) => {
         try {
             const { data: userData } = await supabase.auth.getUser()
-            if (!userData.user) return
+            if (!userData.user) return null
 
             const { data, error } = await supabase
                 .from('projects')
@@ -36,8 +44,8 @@ export default function CreateTaskPage() {
                 .single()
 
             if (error) {
-                if (error.code === '23505') { // Postgres error code สำหรับ Unique violation
-                    alert('ชื่อโปรเจกต์นี้มีอยู่แล้วนะค๊ะคุณปัน ลองใช้ชื่ออื่นดูค่ะ')
+                if (error.code === '23505') {
+                    showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วในระบบค่ะ')
                 } else {
                     throw error
                 }
@@ -46,30 +54,66 @@ export default function CreateTaskPage() {
 
             if (data) {
                 setProjects(prev => [...prev, data as Project])
+                showToast('Success', 'success', 'เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้วค่ะ')
                 return data.id
             }
-        } catch (err) {
-            console.error(err)
+            return null
+        } catch (_) {
+            if (_) showToast('Error', 'error', 'ไม่สามารถสร้างโปรเจกต์ได้ในขณะนี้ค๊ะ')
             return null
         }
     }
 
-    // ✨ ฟังก์ชันลบโปรเจกต์
-    const handleDeleteProject = async (projectId: string) => {
+    // --- ✨ Logic การจัดการลบโปรเจกต์แบบใหม่ ---
+
+    // 1. ฟังก์ชันนี้จะถูกเรียกจาก TaskForm เมื่อกดปุ่มลบ
+    const handleDeleteProjectRequest = async (projectId: string) => {
+        try {
+            // 🔍 เช็คก่อนว่ามี Task ค้างไหม
+            const { count, error } = await supabase
+                .from('tasks')
+                .select('*', { count: 'exact', head: true })
+                .eq('project_id', projectId)
+
+            if (error) throw error
+
+            if (count && count > 0) {
+                showToast('Cannot Delete', 'warning', `โปรเจกต์นี้ยังมีงานค้างอยู่ ${count} รายการค๊ะ`)
+                return false
+            }
+
+            // ✅ ถ้าไม่มีงานค้าง ให้เปิด Modal ยืนยันค๊ะ
+            setProjectToDelete(projectId)
+            setIsDeleteModalOpen(true)
+            return false // ยังไม่ลบทันทีจนกว่าจะกดยืนยันใน Modal ค๊ะ
+        } catch (_) {
+            if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้ค๊ะ')
+            return false
+        }
+    }
+
+    // 2. ฟังก์ชันลบจริงที่ทำงานเมื่อกดยืนยันใน Modal
+    const confirmDeleteProject = async () => {
+        if (!projectToDelete) return
+
+        setIsDeletingProject(true)
         try {
             const { error } = await supabase
                 .from('projects')
                 .delete()
-                .eq('id', projectId)
+                .eq('id', projectToDelete)
 
             if (error) throw error
 
-            // อัปเดต UI ทันที
-            setProjects(prev => prev.filter(p => p.id !== projectId))
-            return true
-        } catch (err) {
-            alert(`ไม่สามารถลบโปรเจกต์ได้ อาจจะมีงานค้างอยู่ในโปรเจกต์นี้นะค๊ะ ${err}`)
-            return false
+            setProjects(prev => prev.filter(p => p.id !== projectToDelete))
+            showToast('Project Removed', 'success', 'ลบโปรเจกต์ออกจากระบบแล้วค่ะ')
+            setIsDeleteModalOpen(false)
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            showToast('Delete Failed', 'error', msg)
+        } finally {
+            setIsDeletingProject(false)
+            setProjectToDelete(null)
         }
     }
 
@@ -78,7 +122,7 @@ export default function CreateTaskPage() {
         try {
             const { data: userData } = await supabase.auth.getUser()
             const user = userData.user
-            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนนะค๊ะ')
+            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนดำเนินการนะค๊ะ')
 
             let imageUrl = ''
             if (formData.imageFile) {
@@ -97,7 +141,8 @@ export default function CreateTaskPage() {
                     project_id: formData.selectedProjectId,
                     creator_name: user.email,
                     assignee_name: formData.assigneeName || 'Unassigned',
-                    due_date: formData.due_date
+                    due_date: formData.due_date,
+                    priority: formData.priority || 'Medium'
                 }).select().single()
 
             if (taskError) throw taskError
@@ -108,28 +153,42 @@ export default function CreateTaskPage() {
                 )
             }
 
+            showToast('Task Created', 'success', 'สร้างงานใหม่เข้าสู่ระบบสำเร็จแล้วค๊ะ')
             router.push('/')
             router.refresh()
         } catch (err: unknown) {
-            if (err instanceof Error) alert(err.message)
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            showToast('Creation Failed', 'error', msg)
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-500">
+        <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-700">
             <PageHeader
                 title="Create Task"
-                subtitle="เพิ่มงานใหม่เข้าสู่โปรเจกต์ของคุณปันนะค๊ะ"
+                subtitle="เพิ่มงานใหม่เข้าสู่ระบบเพื่อจัดการตารางเวลาให้กริบค๊ะ"
                 icon={<Plus size={16} />}
             />
+
             <TaskForm
                 projects={projects}
                 onSubmit={handleCreateTask}
                 onAddProject={handleCreateProject}
-                onDeleteProject={handleDeleteProject} // ✨ ส่งฟังก์ชันลบลงไปค่ะ
+                onDeleteProject={handleDeleteProjectRequest} // ✨ เปลี่ยนมาใช้ตัว Request แทนค๊ะ
                 loading={loading}
+            />
+
+            {/* 🛠️ Confirm Modal สำหรับการลบโปรเจกต์ */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDeleteProject}
+                isLoading={isDeletingProject}
+                title="Remove Project?"
+                description="โปรเจกต์นี้จะถูกลบออกจากระบบอย่างถาวรค๊ะ"
+                confirmText="Yes, Remove it"
             />
         </div>
     )
