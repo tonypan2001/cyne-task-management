@@ -17,11 +17,13 @@ import { TaskStatusCard } from '@/components/task/TaskStatusCard'
 import { DiscussionBoard } from '@/components/task/DiscussionBoard'
 import { useAdmin } from '@/hook/useAdmin'
 import { ConfirmModal } from '@/components/shared/ConfirmModal'
+import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Hook สำหรับ Toast ค๊ะ
 
 export default function TaskDetailPage() {
     const { id } = useParams()
     const router = useRouter()
     const supabase = createClient()
+    const { showToast } = useToast() // ✨ ดึงฟังก์ชันแสดง Toast ออกมาใช้ค่ะ
 
     // ✨ Modal States
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -49,15 +51,15 @@ export default function TaskDetailPage() {
             if (cRes.data) setComments(cRes.data as TaskComment[])
         } catch (err) {
             console.error('Error fetching task details:', err)
+            showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลรายละเอียดงานได้ค่ะ')
         } finally {
             setLoading(false)
         }
-    }, [id, supabase])
+    }, [id, supabase, showToast])
 
     useEffect(() => { fetchData() }, [fetchData])
 
     // --- 2. Handlers ---
-    // ✨ แก้ไข Handler ให้ทำงานร่วมกับ ConfirmModal ค๊ะ
     const handleDeleteTask = async () => {
         setIsDeleting(true)
         try {
@@ -65,33 +67,56 @@ export default function TaskDetailPage() {
             if (error) throw error
 
             setIsModalOpen(false)
+            showToast('Task Deleted', 'success', 'ลบงานออกจากระบบเรียบร้อยแล้วค่ะ') // ✨ แจ้งเตือนเมื่อลบสำเร็จค๊ะ
+
             router.push('/')
             router.refresh()
         } catch (err: unknown) {
-            if (err instanceof Error) alert(err.message)
+            const message = err instanceof Error ? err.message : 'Unknown error occurred'
+            showToast('Delete Failed', 'error', message) // ✨ แจ้งเตือนเมื่อลบไม่สำเร็จค๊ะ
             setIsDeleting(false)
         }
     }
 
     const handleToggleSubTask = async (stId: string, currentStatus: boolean) => {
-        await supabase.from('sub_tasks').update({ is_completed: !currentStatus }).eq('id', stId)
-        setSubTasks(subTasks.map(st => st.id === stId ? { ...st, is_completed: !currentStatus } : st))
+        try {
+            await supabase.from('sub_tasks').update({ is_completed: !currentStatus }).eq('id', stId)
+            setSubTasks(subTasks.map(st => st.id === stId ? { ...st, is_completed: !currentStatus } : st))
+            showToast('Checkpoint Updated', 'success') // ✨ แจ้งเตือนเมื่ออัปเดตสเตตัสงานย่อยค๊ะ
+        } catch (err: unknown) {
+            // ✨ ตรวจสอบว่า err เป็นประเภท Error หรือไม่
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+
+            showToast('Operation Failed', 'error', errorMessage);
+            setIsDeleting(false);
+        }
     }
 
     const handleSendMessage = async (content: string) => {
         const { data: userData } = await supabase.auth.getUser()
         if (!userData.user) return
-        const { data } = await supabase.from('task_comments').insert({
-            task_id: id, user_id: userData.user.id, content
-        }).select().single()
-        if (data) setComments([data as TaskComment, ...comments])
+        try {
+            const { data, error } = await supabase.from('task_comments').insert({
+                task_id: id, user_id: userData.user.id, content
+            }).select().single()
+
+            if (error) throw error
+            if (data) {
+                setComments([data as TaskComment, ...comments])
+                showToast('Comment Sent', 'success', 'ส่งข้อความสำเร็จแล้วค่ะ') // ✨ แจ้งเตือนเมื่อคอมเมนต์สำเร็จค๊ะ
+            }
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+
+            showToast('Operation Failed', 'error', errorMessage);
+            setIsDeleting(false);
+        }
     }
 
     // --- 3. Deadline Logic ---
     const getDeadlineStatus = (dateStr: string | null) => {
         if (!dateStr) return { label: 'No Deadline', color: 'text-slate-400', bg: 'bg-slate-50' }
 
-        // แยกส่วนวันที่เพื่อเลี่ยงปัญหา Timezone เลื่อนค๊ะ
         const [year, month, day] = dateStr.split('-').map(Number)
         const deadline = new Date(year, month - 1, day)
         deadline.setHours(0, 0, 0, 0)
@@ -128,7 +153,6 @@ export default function TaskDetailPage() {
                         <Link href={`/edit/${id}`} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm shadow-slate-200/50">
                             <Edit3 size={16} /> Edit Task
                         </Link>
-                        {/* ✨ เปลี่ยนปุ่มให้เปิด Modal แทนการใช้ confirm() ค๊ะ */}
                         <button
                             onClick={() => setIsModalOpen(true)}
                             className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm"
@@ -214,10 +238,18 @@ export default function TaskDetailPage() {
                         isCompleted={task.is_completed}
                         progress={progress}
                         onToggle={async () => {
-                            const newStatus = !task.is_completed
-                            await supabase.from('tasks').update({ is_completed: newStatus }).eq('id', task.id)
-                            setTask({ ...task, is_completed: newStatus })
-                            router.refresh()
+                            try {
+                                const newStatus = !task.is_completed
+                                await supabase.from('tasks').update({ is_completed: newStatus }).eq('id', task.id)
+                                setTask({ ...task, is_completed: newStatus })
+                                showToast('Status Changed', 'success', `เปลี่ยนสถานะเป็น ${newStatus ? 'เสร็จสิ้น' : 'กำลังดำเนินการ'} แล้วค๊ะ`)
+                                router.refresh()
+                            } catch (err: unknown) {
+                                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+
+                                showToast('Operation Failed', 'error', errorMessage);
+                                setIsDeleting(false);
+                            }
                         }}
                     />
                     <DiscussionBoard
@@ -228,14 +260,13 @@ export default function TaskDetailPage() {
                 </div>
             </div>
 
-            {/* ✨ ใช้งาน ConfirmModal แทน confirm() ดั้งเดิมค๊ะ */}
             <ConfirmModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={handleDeleteTask}
                 isLoading={isDeleting}
                 title="Confirm Deletion?"
-                description={`งานชิ้นนี้จะถูกลบถาวร\nแน่ใจแล้วนะว่าต้องการลบ?`}
+                description={`งานชิ้นนี้จะถูกลบออกจากระบบถาวร\nแน่ใจแล้วนะว่าต้องการดำเนินการต่อ?`}
                 confirmText="Yes, Delete it"
             />
         </div>
