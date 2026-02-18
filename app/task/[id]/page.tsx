@@ -15,11 +15,14 @@ import { Task, SubTask, TaskComment } from '@/types/task'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { TaskStatusCard } from '@/components/task/TaskStatusCard'
 import { DiscussionBoard } from '@/components/task/DiscussionBoard'
+import { useAdmin } from '@/hook/useAdmin'
 
 export default function TaskDetailPage() {
     const { id } = useParams()
     const router = useRouter()
     const supabase = createClient()
+
+    const { isAdmin, loading: adminLoading } = useAdmin()
 
     const [task, setTask] = useState<Task | null>(null)
     const [subTasks, setSubTasks] = useState<SubTask[]>([])
@@ -105,14 +108,16 @@ export default function TaskDetailPage() {
                     <ArrowLeft size={16} /> Back to Board
                 </button>
 
-                <div className="flex gap-3">
-                    <Link href={`/edit/${id}`} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm shadow-slate-200/50">
-                        <Edit3 size={16} /> Edit Task
-                    </Link>
-                    <button onClick={handleDeleteTask} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm">
-                        <Trash2 size={16} /> Delete
-                    </button>
-                </div>
+                {!adminLoading && isAdmin && (
+                    <div className="flex gap-3">
+                        <Link href={`/edit/${id}`} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm shadow-slate-200/50">
+                            <Edit3 size={16} /> Edit Task
+                        </Link>
+                        <button onClick={handleDeleteTask} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm">
+                            <Trash2 size={16} /> Delete
+                        </button>
+                    </div>
+                )}
             </div>
 
             <PageHeader
