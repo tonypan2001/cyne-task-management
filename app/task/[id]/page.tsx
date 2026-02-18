@@ -16,11 +16,16 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { TaskStatusCard } from '@/components/task/TaskStatusCard'
 import { DiscussionBoard } from '@/components/task/DiscussionBoard'
 import { useAdmin } from '@/hook/useAdmin'
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
 
 export default function TaskDetailPage() {
     const { id } = useParams()
     const router = useRouter()
     const supabase = createClient()
+
+    // ✨ Modal States
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     const { isAdmin, loading: adminLoading } = useAdmin()
 
@@ -52,15 +57,19 @@ export default function TaskDetailPage() {
     useEffect(() => { fetchData() }, [fetchData])
 
     // --- 2. Handlers ---
+    // ✨ แก้ไข Handler ให้ทำงานร่วมกับ ConfirmModal ค๊ะ
     const handleDeleteTask = async () => {
-        if (!confirm('คุณปันแน่ใจนะคะว่าจะลบงานชิ้นนี้? ข้อมูลจะหายไปถาวรเลยนะค๊ะ')) return
+        setIsDeleting(true)
         try {
             const { error } = await supabase.from('tasks').delete().eq('id', id)
             if (error) throw error
+
+            setIsModalOpen(false)
             router.push('/')
             router.refresh()
         } catch (err: unknown) {
             if (err instanceof Error) alert(err.message)
+            setIsDeleting(false)
         }
     }
 
@@ -81,9 +90,15 @@ export default function TaskDetailPage() {
     // --- 3. Deadline Logic ---
     const getDeadlineStatus = (dateStr: string | null) => {
         if (!dateStr) return { label: 'No Deadline', color: 'text-slate-400', bg: 'bg-slate-50' }
-        const deadline = new Date(dateStr)
+
+        // แยกส่วนวันที่เพื่อเลี่ยงปัญหา Timezone เลื่อนค๊ะ
+        const [year, month, day] = dateStr.split('-').map(Number)
+        const deadline = new Date(year, month - 1, day)
+        deadline.setHours(0, 0, 0, 0)
+
         const today = new Date()
         today.setHours(0, 0, 0, 0)
+
         const diffDays = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
         if (diffDays < 0) return { label: `Overdue ${Math.abs(diffDays)}d`, color: 'text-red-500', bg: 'bg-red-50' }
@@ -113,7 +128,11 @@ export default function TaskDetailPage() {
                         <Link href={`/edit/${id}`} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-bold text-xs shadow-sm shadow-slate-200/50">
                             <Edit3 size={16} /> Edit Task
                         </Link>
-                        <button onClick={handleDeleteTask} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm">
+                        {/* ✨ เปลี่ยนปุ่มให้เปิด Modal แทนการใช้ confirm() ค๊ะ */}
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all font-bold text-xs shadow-sm"
+                        >
                             <Trash2 size={16} /> Delete
                         </button>
                     </div>
@@ -208,6 +227,17 @@ export default function TaskDetailPage() {
                     />
                 </div>
             </div>
+
+            {/* ✨ ใช้งาน ConfirmModal แทน confirm() ดั้งเดิมค๊ะ */}
+            <ConfirmModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={handleDeleteTask}
+                isLoading={isDeleting}
+                title="Confirm Deletion?"
+                description={`งานชิ้นนี้จะถูกลบถาวร\nแน่ใจแล้วนะว่าต้องการลบ?`}
+                confirmText="Yes, Delete it"
+            />
         </div>
     )
 }
