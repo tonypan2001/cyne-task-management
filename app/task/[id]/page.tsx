@@ -7,7 +7,7 @@ import NextImage from 'next/image'
 import Link from 'next/link'
 import {
     ArrowLeft, Calendar, User, Briefcase,
-    CheckCircle2, Trash2, Edit3, Clock, AlertCircle
+    CheckCircle2, Trash2, Edit3, Clock, AlertCircle,
 } from 'lucide-react'
 
 // ✨ Import Components & Types
@@ -17,17 +17,18 @@ import { TaskStatusCard } from '@/components/task/TaskStatusCard'
 import { DiscussionBoard } from '@/components/task/DiscussionBoard'
 import { useAdmin } from '@/hook/useAdmin'
 import { ConfirmModal } from '@/components/shared/ConfirmModal'
-import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Hook สำหรับ Toast ค๊ะ
+import { useToast } from '@/components/shared/ToastProvider'
 
 export default function TaskDetailPage() {
     const { id } = useParams()
     const router = useRouter()
     const supabase = createClient()
-    const { showToast } = useToast() // ✨ ดึงฟังก์ชันแสดง Toast ออกมาใช้ค่ะ
+    const { showToast } = useToast()
 
-    // ✨ Modal States
+    // ✨ Modal & Loading States
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isStatusLoading, setIsStatusLoading] = useState(false) // ✨ State สำหรับปุ่ม Done ค๊ะ
 
     const { isAdmin, loading: adminLoading } = useAdmin()
 
@@ -67,13 +68,13 @@ export default function TaskDetailPage() {
             if (error) throw error
 
             setIsModalOpen(false)
-            showToast('Task Deleted', 'success', 'ลบงานออกจากระบบเรียบร้อยแล้วค่ะ') // ✨ แจ้งเตือนเมื่อลบสำเร็จค๊ะ
+            showToast('Task Deleted', 'success', 'ลบงานออกจากระบบเรียบร้อยแล้วค่ะ')
 
             router.push('/')
             router.refresh()
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Unknown error occurred'
-            showToast('Delete Failed', 'error', message) // ✨ แจ้งเตือนเมื่อลบไม่สำเร็จค๊ะ
+            showToast('Delete Failed', 'error', message)
             setIsDeleting(false)
         }
     }
@@ -82,13 +83,10 @@ export default function TaskDetailPage() {
         try {
             await supabase.from('sub_tasks').update({ is_completed: !currentStatus }).eq('id', stId)
             setSubTasks(subTasks.map(st => st.id === stId ? { ...st, is_completed: !currentStatus } : st))
-            showToast('Checkpoint Updated', 'success') // ✨ แจ้งเตือนเมื่ออัปเดตสเตตัสงานย่อยค๊ะ
+            showToast('Checkpoint Updated', 'success')
         } catch (err: unknown) {
-            // ✨ ตรวจสอบว่า err เป็นประเภท Error หรือไม่
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-
             showToast('Operation Failed', 'error', errorMessage);
-            setIsDeleting(false);
         }
     }
 
@@ -103,13 +101,11 @@ export default function TaskDetailPage() {
             if (error) throw error
             if (data) {
                 setComments([data as TaskComment, ...comments])
-                showToast('Comment Sent', 'success', 'ส่งข้อความสำเร็จแล้วค่ะ') // ✨ แจ้งเตือนเมื่อคอมเมนต์สำเร็จค๊ะ
+                showToast('Comment Sent', 'success', 'ส่งข้อความสำเร็จแล้วค่ะ')
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-
             showToast('Operation Failed', 'error', errorMessage);
-            setIsDeleting(false);
         }
     }
 
@@ -239,18 +235,24 @@ export default function TaskDetailPage() {
                         progress={progress}
                         onToggle={async () => {
                             try {
+                                setIsStatusLoading(true) // ✨ เริ่มสถานะโหลดค๊ะ
                                 const newStatus = !task.is_completed
-                                await supabase.from('tasks').update({ is_completed: newStatus }).eq('id', task.id)
+                                const { error } = await supabase.from('tasks').update({ is_completed: newStatus }).eq('id', task.id)
+
+                                if (error) throw error
+
                                 setTask({ ...task, is_completed: newStatus })
                                 showToast('Status Changed', 'success', `เปลี่ยนสถานะเป็น ${newStatus ? 'เสร็จสิ้น' : 'กำลังดำเนินการ'} แล้วค๊ะ`)
                                 router.refresh()
                             } catch (err: unknown) {
                                 const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-
                                 showToast('Operation Failed', 'error', errorMessage);
-                                setIsDeleting(false);
+                            } finally {
+                                setIsStatusLoading(false) // ✅ สิ้นสุดการโหลดค๊ะ
                             }
                         }}
+                        // ✨ อย่าลืมส่ง Props ใหม่ไปที่ TaskStatusCard ด้วยนะค๊ะ (ถ้ายังไม่ได้เขียนรองรับ)
+                        isLoading={isStatusLoading}
                     />
                     <DiscussionBoard
                         comments={comments}
