@@ -27,7 +27,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
         <ToastContext.Provider value={{ showToast }}>
             {children}
             {/* Container สำหรับวาง Toast ไว้มุมขวาบน */}
-            <div className="fixed top-6 right-6 z-[110] flex flex-col gap-3 w-full max-w-xs pointer-events-none">
+            <div className="fixed top-6 right-6 z-110 flex flex-col gap-3 w-full max-w-xs pointer-events-none">
                 {toasts.map((toast) => (
                     <div
                         key={toast.id}
