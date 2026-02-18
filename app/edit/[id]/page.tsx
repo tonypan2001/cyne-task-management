@@ -40,6 +40,7 @@ export default function EditTaskPage() {
                     selectedProjectId: task.project_id || '',
                     assigneeName: task.assignee_name || '',
                     due_date: task.due_date || '', // 📅 ดึงวันที่เดิมมาใส่ตรงนี้ค่ะ
+                    priority: (task.priority as "High" | "Medium" | "Low") ?? 'Medium',
                     subTasks: subTasks.map(st => ({ title: st.title }))
                 })
             }
