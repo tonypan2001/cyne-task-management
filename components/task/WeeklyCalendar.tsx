@@ -28,11 +28,9 @@ const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3
 
 export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCalendarProps) => {
 
-    // ✨ คำนวณวันทั้ง 7 โดยใช้ Local Time เพื่อไม่ให้เลื่อน 1 วันค๊ะ
     const days = useMemo(() => {
         const startOfWeek = new Date(referenceDate)
         const day = startOfWeek.getDay()
-        // ปรับให้เริ่มที่วันจันทร์ (ถ้าเป็นวันอาทิตย์ให้ถอยไป 6 วัน)
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
         startOfWeek.setDate(diff)
         startOfWeek.setHours(0, 0, 0, 0)
@@ -89,8 +87,6 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
             <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
                 {days.map((date) => {
                     const dayIndex = date.getDay()
-
-                    // ✨ แก้จุดตาย: สร้าง Date String จาก Local Time ไม่ใช้ ISOString ค๊ะ
                     const YYYY = date.getFullYear()
                     const MM = String(date.getMonth() + 1).padStart(2, '0')
                     const DD = String(date.getDate()).padStart(2, '0')
@@ -126,19 +122,36 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
                             </div>
 
                             <div className="space-y-2 flex-1">
-                                {tasksOnDay.map(task => (
-                                    <Link href={`/task/${task.id}`} key={task.id} className="block p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-400 hover:shadow-md transition-all group">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <div className={`w-1 h-1 rounded-full ${task.priority === 'High' ? 'bg-red-500' : 'bg-blue-400'}`} />
-                                            <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">
-                                                {task.priority || 'Medium'}
-                                            </span>
-                                        </div>
-                                        <p className="text-[9px] font-bold text-slate-700 line-clamp-2 leading-tight group-hover:text-blue-600">
-                                            {task.title}
-                                        </p>
-                                    </Link>
-                                ))}
+                                {tasksOnDay.map(task => {
+                                    // ✨ เพิ่มการเช็คสถานะงานที่เสร็จแล้ว
+                                    const isDone = task.is_completed;
+
+                                    return (
+                                        <Link
+                                            href={`/task/${task.id}`}
+                                            key={task.id}
+                                            className={`block p-2.5 rounded-xl border transition-all group ${isDone
+                                                    ? 'bg-slate-100/80 border-slate-200 opacity-60'
+                                                    : 'bg-white border-slate-100 shadow-sm hover:border-blue-400 hover:shadow-md'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-1.5 mb-1">
+                                                <div className={`w-1 h-1 rounded-full ${isDone ? 'bg-slate-400' : (task.priority === 'High' ? 'bg-red-500' : 'bg-blue-400')
+                                                    }`} />
+                                                <span className={`text-[7px] font-black uppercase tracking-tighter ${isDone ? 'text-slate-400' : 'text-slate-300'
+                                                    }`}>
+                                                    {task.priority || 'Medium'}
+                                                </span>
+                                            </div>
+                                            <p className={`text-[9px] font-bold line-clamp-2 leading-tight transition-all ${isDone
+                                                    ? 'text-slate-400 line-through italic'
+                                                    : 'text-slate-700 group-hover:text-blue-600'
+                                                }`}>
+                                                {task.title}
+                                            </p>
+                                        </Link>
+                                    )
+                                })}
                             </div>
                         </div>
                     )
