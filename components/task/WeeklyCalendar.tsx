@@ -1,33 +1,14 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Task } from '@/types/task'
 import Link from 'next/link'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
-
-interface WeeklyCalendarProps {
-    tasks: Task[]
-    referenceDate: Date
-    onDateChange: (date: Date) => void
-}
-
-const getDayColor = (dayIndex: number) => {
-    const colors = [
-        'border-t-[#FF3B30]', // Sun
-        'border-t-[#FFD60A]', // Mon
-        'border-t-[#FF2D55]', // Tue
-        'border-t-[#34C759]', // Wed
-        'border-t-[#FF9500]', // Thu
-        'border-t-[#5AC8FA]', // Fri
-        'border-t-[#AF52DE]', // Sat
-    ]
-    return colors[dayIndex]
-}
-
-const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3 }
+import { WeeklyCalendarProps } from '@/types/calendar'
+import { DAY_COLORS, PRIORITY_ORDER } from '@/constants/colors'
 
 export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCalendarProps) => {
 
+    // 🗓️ คำนวณวันทั้ง 7 ในสัปดาห์
     const days = useMemo(() => {
         const startOfWeek = new Date(referenceDate)
         const day = startOfWeek.getDay()
@@ -42,6 +23,7 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
         })
     }, [referenceDate])
 
+    // 🧭 Navigation Handlers
     const nextWeek = () => {
         const next = new Date(referenceDate)
         next.setDate(next.getDate() + 7)
@@ -58,6 +40,7 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
 
     return (
         <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-2xl shadow-slate-200/40 animate-in fade-in duration-700">
+            {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 <div className="flex items-center gap-4">
                     <div className="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-100">
@@ -84,6 +67,7 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
                 </div>
             </div>
 
+            {/* Calendar Grid */}
             <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
                 {days.map((date) => {
                     const dayIndex = date.getDay()
@@ -99,14 +83,14 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
 
                     const tasksOnDay = tasks
                         .filter(t => t.due_date === dateString)
-                        .sort((a, b) => (priorityOrder[a.priority || 'Medium'] - priorityOrder[b.priority || 'Medium']))
+                        .sort((a, b) => (PRIORITY_ORDER[a.priority || 'Medium'] - PRIORITY_ORDER[b.priority || 'Medium']))
 
                     return (
                         <div
                             key={dateString}
-                            className={`flex flex-col min-h-[160px] rounded-4xl p-4 transition-all border-t-[6px] shadow-sm ${getDayColor(dayIndex)} ${isToday
-                                ? 'bg-blue-50/40 border-x-blue-100 border-b-blue-100 border-x border-b scale-[1.02] z-10'
-                                : 'bg-slate-50 border-x-transparent border-b-transparent border-x border-b'
+                            className={`flex flex-col min-h-[160px] rounded-4xl p-4 transition-all border-t-[6px] shadow-sm ${DAY_COLORS[dayIndex]} ${isToday
+                                    ? 'bg-blue-50/40 border-x-blue-100 border-b-blue-100 border-x border-b scale-[1.02] z-10'
+                                    : 'bg-slate-50 border-x-transparent border-b-transparent border-x border-b'
                                 }`}
                         >
                             <div className="mb-4 flex justify-between items-start">
@@ -121,11 +105,10 @@ export const WeeklyCalendar = ({ tasks, referenceDate, onDateChange }: WeeklyCal
                                 {isToday && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}
                             </div>
 
+                            {/* Tasks List in Day */}
                             <div className="space-y-2 flex-1">
                                 {tasksOnDay.map(task => {
-                                    // ✨ เพิ่มการเช็คสถานะงานที่เสร็จแล้ว
                                     const isDone = task.is_completed;
-
                                     return (
                                         <Link
                                             href={`/task/${task.id}`}
