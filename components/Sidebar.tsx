@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import {
-    LayoutDashboard, PlusSquare, LogOut, CheckCircle2, Layout as LogoIcon
-} from 'lucide-react'
+import { LogOut, Layout as LogoIcon } from 'lucide-react'
 import { useAdmin } from '@/hook/useAdmin'
+import { menuItems } from '@/constants/menu'
 
 export default function Sidebar() {
     const pathname = usePathname()
@@ -35,12 +34,6 @@ export default function Sidebar() {
         router.push('/auth')
         router.refresh()
     }
-
-    const menuItems = [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-        { name: 'สร้างงานใหม่', path: '/create', icon: PlusSquare },
-        { name: 'งานที่เสร็จแล้ว', path: '/completed', icon: CheckCircle2 },
-    ]
 
     return (
         <aside className="w-64 h-screen bg-white border-r border-slate-100 flex flex-col fixed left-0 top-0 z-20 font-sans">
