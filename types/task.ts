@@ -1,6 +1,8 @@
 export interface Project {
     id: string;
     name: string;
+    user_id?: string;
+    workspace_id: string;
 }
 
 export interface SubTask {
@@ -19,6 +21,7 @@ export interface Task {
     created_at: string;
     user_id: string;
     project_id: string | null;
+    workspace_id: string;
     creator_name: string | null;
     assignee_name: string | null;
     is_completed: boolean;
