@@ -8,6 +8,7 @@ import Link from 'next/link'
 import {
     ArrowLeft, Calendar, User, Briefcase,
     CheckCircle2, Trash2, Edit3, Clock, AlertCircle,
+    Loader2
 } from 'lucide-react'
 
 // ✨ Import Components & Types
@@ -25,10 +26,13 @@ export default function TaskDetailPage() {
     const supabase = createClient()
     const { showToast } = useToast()
 
+    // ✨ Workspace State
+    const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+
     // ✨ Modal & Loading States
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
-    const [isStatusLoading, setIsStatusLoading] = useState(false) // ✨ State สำหรับปุ่ม Done ค๊ะ
+    const [isStatusLoading, setIsStatusLoading] = useState(false)
 
     const { isAdmin, loading: adminLoading } = useAdmin()
 
@@ -37,9 +41,20 @@ export default function TaskDetailPage() {
     const [comments, setComments] = useState<TaskComment[]>([])
     const [loading, setLoading] = useState(true)
 
-    // --- 1. Fetch Data ---
+    // --- 1. ตรวจสอบ Workspace เริ่มต้น ---
+    useEffect(() => {
+        const activeId = localStorage.getItem('active_workspace_id')
+        if (!activeId) {
+            router.push('/workspaces')
+            return
+        }
+        setWorkspaceId(activeId)
+    }, [router])
+
+    // --- 2. Fetch Data ---
     const fetchData = useCallback(async () => {
-        if (!id) return
+        if (!id || !workspaceId) return // ✨ รอให้ได้ Workspace ก่อนถึงจะโหลดค๊ะ
+
         try {
             const [tRes, stRes, cRes] = await Promise.all([
                 supabase.from('tasks').select('*').eq('id', id).single(),
@@ -47,7 +62,19 @@ export default function TaskDetailPage() {
                 supabase.from('task_comments').select('*').eq('task_id', id).order('created_at', { ascending: false })
             ])
 
-            if (tRes.data) setTask(tRes.data as Task)
+            if (tRes.data) {
+                const fetchedTask = tRes.data as Task
+
+                // 🔒 เช็คความปลอดภัย: งานนี้อยู่ใน Workspace นี้จริงๆ ใช่ไหม?
+                if (fetchedTask.workspace_id !== workspaceId) {
+                    showToast('Access Denied', 'error', 'งานนี้ไม่ได้อยู่ในพื้นที่ทำงานปัจจุบันค๊ะ')
+                    router.push('/')
+                    return
+                }
+
+                setTask(fetchedTask)
+            }
+
             if (stRes.data) setSubTasks(stRes.data as SubTask[])
             if (cRes.data) setComments(cRes.data as TaskComment[])
         } catch (err) {
@@ -56,11 +83,15 @@ export default function TaskDetailPage() {
         } finally {
             setLoading(false)
         }
-    }, [id, supabase, showToast])
+    }, [id, workspaceId, supabase, showToast, router])
 
-    useEffect(() => { fetchData() }, [fetchData])
+    useEffect(() => {
+        if (workspaceId) {
+            fetchData()
+        }
+    }, [workspaceId, fetchData])
 
-    // --- 2. Handlers ---
+    // --- 3. Handlers ---
     const handleDeleteTask = async () => {
         setIsDeleting(true)
         try {
@@ -109,7 +140,7 @@ export default function TaskDetailPage() {
         }
     }
 
-    // --- 3. Deadline Logic ---
+    // --- 4. Deadline Logic ---
     const getDeadlineStatus = (dateStr: string | null) => {
         if (!dateStr) return { label: 'No Deadline', color: 'text-slate-400', bg: 'bg-slate-50' }
 
@@ -131,7 +162,12 @@ export default function TaskDetailPage() {
         ? Math.round((subTasks.filter(st => st.is_completed).length / subTasks.length) * 100)
         : (task?.is_completed ? 100 : 0)
 
-    if (loading || !task) return <div className="p-20 text-center font-black text-slate-200 animate-pulse uppercase tracking-[0.5em]">Syncing Details...</div>
+    if (loading || !task) return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
+            <Loader2 size={32} className="animate-spin text-blue-600" />
+            <p className="font-black text-[10px] uppercase tracking-widest">Loading Details...</p>
+        </div>
+    )
 
     const dlStatus = getDeadlineStatus(task.due_date)
 
@@ -235,7 +271,7 @@ export default function TaskDetailPage() {
                         progress={progress}
                         onToggle={async () => {
                             try {
-                                setIsStatusLoading(true) // ✨ เริ่มสถานะโหลดค๊ะ
+                                setIsStatusLoading(true)
                                 const newStatus = !task.is_completed
                                 const { error } = await supabase.from('tasks').update({ is_completed: newStatus }).eq('id', task.id)
 
@@ -248,10 +284,9 @@ export default function TaskDetailPage() {
                                 const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
                                 showToast('Operation Failed', 'error', errorMessage);
                             } finally {
-                                setIsStatusLoading(false) // ✅ สิ้นสุดการโหลดค๊ะ
+                                setIsStatusLoading(false)
                             }
                         }}
-                        // ✨ อย่าลืมส่ง Props ใหม่ไปที่ TaskStatusCard ด้วยนะค๊ะ (ถ้ายังไม่ได้เขียนรองรับ)
                         isLoading={isStatusLoading}
                     />
                     <DiscussionBoard
