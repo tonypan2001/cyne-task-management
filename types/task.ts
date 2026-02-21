@@ -66,3 +66,11 @@ export interface DiscussionBoardProps {
     onSendMessage: (content: string) => void;
     loading: boolean;
 }
+
+export interface Workspace {
+    id: string;
+    name: string;
+    description?: string;
+    user_id: string;
+    created_at: string;
+}
