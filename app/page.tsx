@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation' // ✨ 1. นำเข้า useRouter ค๊ะ
 import { createClient } from '@/lib/supabase'
 import { Search, LayoutGrid, Filter, Plus, Flame, CheckCircle2, X } from 'lucide-react'
 import Link from 'next/link'
@@ -16,6 +17,7 @@ import { useAdmin } from '@/hook/useAdmin'
 
 export default function DashboardPage() {
   const supabase = createClient()
+  const router = useRouter() // ✨ 2. เรียกใช้ router ค๊ะ
 
   const { isAdmin, loading: adminLoading } = useAdmin()
 
@@ -33,10 +35,20 @@ export default function DashboardPage() {
   // --- 1. Fetch Data ---
   useEffect(() => {
     async function fetchData() {
+      // ✨ 3. เช็ค Workspace ID จาก LocalStorage ค๊ะ
+      const workspaceId = localStorage.getItem('active_workspace_id')
+
+      // ถ้าไม่มีให้เด้งกลับไปหน้าเลือก Workspace ทันทีค๊ะ
+      if (!workspaceId) {
+        router.push('/workspaces')
+        return
+      }
+
       try {
         const [tRes, pRes] = await Promise.all([
-          supabase.from('tasks').select('*').order('created_at', { ascending: false }),
-          supabase.from('projects').select('*').order('name')
+          // ✨ 4. เติม .eq('workspace_id', workspaceId) เพื่อกรองข้อมูลให้ตรงกับพื้นที่ทำงานค๊ะ
+          supabase.from('tasks').select('*').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
+          supabase.from('projects').select('*').eq('workspace_id', workspaceId).order('name')
         ])
 
         if (tRes.data) setTasks(tRes.data as Task[])
@@ -48,7 +60,7 @@ export default function DashboardPage() {
       }
     }
     fetchData()
-  }, [supabase])
+  }, [supabase, router]) // ✨ อย่าลืมใส่ router ใน dependency ด้วยนะค๊ะ
 
   const overdueTasks = useMemo(() => {
     const today = new Date();
@@ -57,8 +69,6 @@ export default function DashboardPage() {
     return tasks.filter(t => {
       if (!t.due_date || t.is_completed) return false;
 
-      // ✨ แก้ตรงนี้ค่ะ: อย่าใช้ new Date(t.due_date) ตรงๆ 
-      // ให้แยกส่วนออกมาเพื่อสร้าง Date ที่เป็นเวลาเที่ยงคืนของท้องถิ่น
       const [year, month, day] = t.due_date.split('-').map(Number);
       const taskDate = new Date(year, month - 1, day);
       taskDate.setHours(0, 0, 0, 0);
@@ -123,8 +133,8 @@ export default function DashboardPage() {
       {/* 4. Weekly Calendar */}
       <WeeklyCalendar
         tasks={tasks}
-        referenceDate={referenceDate} // ส่งค่าวันที่ไปโชว์
-        onDateChange={setReferenceDate} // ✨ ส่งตัวเปลี่ยนค่าไปใช้งาน (แก้ Error ts(6133))
+        referenceDate={referenceDate}
+        onDateChange={setReferenceDate}
       />
 
       {/* 5. Filter & Search Section */}
@@ -157,7 +167,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ✨ Search Bar - เพิ่มปุ่ม Clear (X) */}
+        {/* Search Bar - เพิ่มปุ่ม Clear (X) */}
         <div className="relative w-full max-w-md group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={14} />
           <input
