@@ -8,8 +8,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     const pathname = usePathname()
 
     // ✨ เช็คหน้าที่ไม่ต้องการ Sidebar (รวมทั้ง /auth และ /login ตามที่คุณปันทำไว้ค่ะ)
-    const noSidebarPages = ['/auth', '/login']
+    const noSidebarPages = ['/auth', '/login', '/workspaces']
     const showSidebar = !noSidebarPages.includes(pathname)
+    // ✨ เช็คว่ากำลังอยู่หน้า workspaces หรือหน้า auth (ถ้ามี) เพื่อขยายเต็มจอค๊ะ
 
     return (
         <ToastProvider>
