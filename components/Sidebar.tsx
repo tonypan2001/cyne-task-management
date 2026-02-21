@@ -35,6 +35,10 @@ export default function Sidebar() {
         router.refresh()
     }
 
+    if (pathname === "/workspaces") {
+        return null
+    }
+
     return (
         <aside className="w-64 h-screen bg-white border-r border-slate-100 flex flex-col fixed left-0 top-0 z-20 font-sans">
             {/* Logo Section */}
