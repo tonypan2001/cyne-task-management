@@ -3,49 +3,89 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { Project, TaskFormData } from '@/types/task'
 import { TaskForm } from '@/components/task/TaskForm'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useToast } from '@/components/shared/ToastProvider'
-import { ConfirmModal } from '@/components/shared/ConfirmModal' // ✨ เพิ่มการนำเข้า Modal ค๊ะ
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
 
 export default function CreateTaskPage() {
     const supabase = createClient()
     const router = useRouter()
     const { showToast } = useToast()
+    
+    // ✨ เพิ่ม State สำหรับเก็บ Workspace ID ปัจจุบัน
+    const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+    const [isPageLoading, setIsPageLoading] = useState(true)
 
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(false)
 
-    // ✨ States สำหรับจัดการ Modal การลบโปรเจกต์
+    // States สำหรับจัดการ Modal การลบโปรเจกต์
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
     const [isDeletingProject, setIsDeletingProject] = useState(false)
 
+    // --- 1. ตรวจสอบ Workspace เริ่มต้น ---
+    useEffect(() => {
+        const activeId = localStorage.getItem('active_workspace_id')
+        if (!activeId) {
+            router.push('/workspaces')
+            return
+        }
+        setWorkspaceId(activeId)
+    }, [router])
+
+    // --- 2. Fetch Projects (เฉพาะของ Workspace นี้) ---
     const fetchProjects = useCallback(async () => {
-        const { data } = await supabase.from('projects').select('id, name').order('name')
-        if (data) setProjects(data as Project[])
-    }, [supabase])
+        if (!workspaceId) return
+        
+        try {
+            const { data } = await supabase
+                .from('projects')
+                .select('id, name')
+                .eq('workspace_id', workspaceId) // ✨ กรองเฉพาะโปรเจกต์ของ Workspace นี้
+                .order('name')
+            
+            if (data) setProjects(data as Project[])
+        } catch (_) {
+            if (_) showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลโปรเจกต์ได้ค๊ะ')
+        } finally {
+            setIsPageLoading(false)
+        }
+    }, [supabase, workspaceId, showToast])
 
     useEffect(() => {
-        fetchProjects()
-    }, [fetchProjects])
+        if (workspaceId) {
+            fetchProjects()
+        }
+    }, [workspaceId, fetchProjects])
 
+    // --- 3. สร้าง Project (แนบ Workspace ID) ---
     const handleCreateProject = async (name: string) => {
+        if (!workspaceId) {
+            showToast('Error', 'error', 'ไม่พบข้อมูล Workspace ปัจจุบันค๊ะ')
+            return null
+        }
+
         try {
             const { data: userData } = await supabase.auth.getUser()
             if (!userData.user) return null
 
             const { data, error } = await supabase
                 .from('projects')
-                .insert({ name, user_id: userData.user.id })
+                .insert({ 
+                    name, 
+                    user_id: userData.user.id,
+                    workspace_id: workspaceId // ✨ แนบ Workspace ID ลง Database
+                })
                 .select()
                 .single()
 
             if (error) {
                 if (error.code === '23505') {
-                    showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วในระบบค่ะ')
+                    showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วในพื้นที่ทำงานนี้ค่ะ')
                 } else {
                     throw error
                 }
@@ -64,12 +104,9 @@ export default function CreateTaskPage() {
         }
     }
 
-    // --- ✨ Logic การจัดการลบโปรเจกต์แบบใหม่ ---
-
-    // 1. ฟังก์ชันนี้จะถูกเรียกจาก TaskForm เมื่อกดปุ่มลบ
+    // --- 4. Logic การจัดการลบโปรเจกต์ (เหมือนเดิม) ---
     const handleDeleteProjectRequest = async (projectId: string) => {
         try {
-            // 🔍 เช็คก่อนว่ามี Task ค้างไหม
             const { count, error } = await supabase
                 .from('tasks')
                 .select('*', { count: 'exact', head: true })
@@ -82,17 +119,15 @@ export default function CreateTaskPage() {
                 return false
             }
 
-            // ✅ ถ้าไม่มีงานค้าง ให้เปิด Modal ยืนยันค๊ะ
             setProjectToDelete(projectId)
             setIsDeleteModalOpen(true)
-            return false // ยังไม่ลบทันทีจนกว่าจะกดยืนยันใน Modal ค๊ะ
+            return false 
         } catch (_) {
             if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้ค๊ะ')
             return false
         }
     }
 
-    // 2. ฟังก์ชันลบจริงที่ทำงานเมื่อกดยืนยันใน Modal
     const confirmDeleteProject = async () => {
         if (!projectToDelete) return
 
@@ -117,7 +152,10 @@ export default function CreateTaskPage() {
         }
     }
 
+    // --- 5. สร้าง Task (แนบ Workspace ID) ---
     const handleCreateTask = async (formData: TaskFormData) => {
+        if (!workspaceId) return
+
         setLoading(true)
         try {
             const { data: userData } = await supabase.auth.getUser()
@@ -138,6 +176,7 @@ export default function CreateTaskPage() {
                     description: formData.description,
                     image_url: imageUrl,
                     user_id: user.id,
+                    workspace_id: workspaceId, // ✨ แนบ Workspace ID ลง Database
                     project_id: formData.selectedProjectId,
                     creator_name: user.email,
                     assignee_name: formData.assigneeName || 'Unassigned',
@@ -164,11 +203,20 @@ export default function CreateTaskPage() {
         }
     }
 
+    if (isPageLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-slate-300 gap-4">
+                <Loader2 size={32} className="animate-spin text-blue-600" />
+                <p className="font-black uppercase tracking-widest text-[10px] italic">Loading Workspace...</p>
+            </div>
+        )
+    }
+
     return (
         <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-700">
             <PageHeader
                 title="Create Task"
-                subtitle="เพิ่มงานใหม่เข้าสู่ระบบเพื่อจัดการตารางเวลาให้กริบค๊ะ"
+                subtitle="เพิ่มงานใหม่เข้าสู่พื้นที่ทำงานปัจจุบันของคุณค๊ะ"
                 icon={<Plus size={16} />}
             />
 
@@ -176,11 +224,10 @@ export default function CreateTaskPage() {
                 projects={projects}
                 onSubmit={handleCreateTask}
                 onAddProject={handleCreateProject}
-                onDeleteProject={handleDeleteProjectRequest} // ✨ เปลี่ยนมาใช้ตัว Request แทนค๊ะ
+                onDeleteProject={handleDeleteProjectRequest}
                 loading={loading}
             />
 
-            {/* 🛠️ Confirm Modal สำหรับการลบโปรเจกต์ */}
             <ConfirmModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
