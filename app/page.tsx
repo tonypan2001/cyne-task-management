@@ -45,6 +45,19 @@ export default function DashboardPage() {
       }
 
       try {
+        // ✨ [เพิ่มใหม่] ตรวจสอบสิทธิ์: แอคเคาท์นี้มีสิทธิ์เข้า Workspace นี้ไหม?
+        const { data: wsCheck, error: wsError } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('id', workspaceId)
+            .single()
+
+        // ✨ ถ้าไม่มีสิทธิ์ (RLS บล็อก) หรือไม่พบข้อมูล ให้ล้าง LocalStorage แล้วเตะไปหน้าเลือกค๊ะ
+        if (wsError || !wsCheck) {
+            localStorage.removeItem('active_workspace_id')
+            router.push('/workspaces')
+            return
+        }
         const [tRes, pRes] = await Promise.all([
           // ✨ 4. เติม .eq('workspace_id', workspaceId) เพื่อกรองข้อมูลให้ตรงกับพื้นที่ทำงานค๊ะ
           supabase.from('tasks').select('*').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),

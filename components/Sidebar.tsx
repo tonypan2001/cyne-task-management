@@ -30,6 +30,8 @@ export default function Sidebar() {
     }, [supabase.auth])
 
     const handleLogout = async () => {
+        // ✨ ล้างความจำ Workspace ก่อนออกจากระบบค๊ะ
+        localStorage.removeItem('active_workspace_id')
         await supabase.auth.signOut()
         router.push('/auth')
         router.refresh()
