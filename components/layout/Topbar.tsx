@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { ArrowLeftRight, Briefcase, UserPlus } from 'lucide-react'
-import { InviteModal } from '../workspace/InviteModal' // ✨ นำเข้า Modal ค๊ะ
+import { InviteModal } from '../workspace/InviteModal' // ✨ นำเข้า Modal 
 
 export const TopBar = () => {
     const supabase = createClient()
@@ -20,7 +20,7 @@ export const TopBar = () => {
                 return
             }
 
-            setWorkspaceId(wsId) // ✨ เก็บค่า ID ไว้ส่งให้ Modal ค๊ะ
+            setWorkspaceId(wsId) // ✨ เก็บค่า ID ไว้ส่งให้ Modal 
 
             const { data } = await supabase
                 .from('workspaces')
@@ -74,7 +74,7 @@ export const TopBar = () => {
                 </div>
             </div>
 
-            {/* ✨ เรียกใช้งาน Modal ค๊ะ */}
+            {/* ✨ เรียกใช้งาน Modal  */}
             {workspaceId && (
                 <InviteModal
                     isOpen={isInviteModalOpen}

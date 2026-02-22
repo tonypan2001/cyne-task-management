@@ -23,7 +23,7 @@ export default function AuthPage() {
             if (isSignUp) {
                 // ตรวจสอบ Password ให้ตรงกัน
                 if (password !== confirmPassword) {
-                    throw new Error('รหัสผ่านไม่ตรงกันค่ะ')
+                    throw new Error('รหัสผ่านไม่ตรงกัน')
                 }
 
                 const { error } = await supabase.auth.signUp({
@@ -34,7 +34,7 @@ export default function AuthPage() {
                     },
                 })
                 if (error) throw error
-                alert('สมัครสมาชิกสำเร็จ! โปรดเช็คอีเมลเพื่อยืนยันตัวตนนะคะ')
+                alert('สมัครสมาชิกสำเร็จ! โปรดเช็คอีเมลเพื่อยืนยันตัวตน')
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
@@ -45,7 +45,7 @@ export default function AuthPage() {
                 router.refresh()
             }
         } catch (err: unknown) {
-            alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค่ะ')
+            alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด')
         } finally {
             setLoading(false)
         }
@@ -60,7 +60,7 @@ export default function AuthPage() {
                     <div className="inline-flex bg-blue-600 p-3 rounded-2xl text-white mb-4 shadow-lg shadow-blue-100">
                         <Layout size={32} />
                     </div>
-                    <h1 className="text-2xl font-bold">{isSignUp ? 'สร้างบัญชีใหม่' : 'ยินดีต้อนรับกลับมาค่ะ'}</h1>
+                    <h1 className="text-2xl font-bold">{isSignUp ? 'สร้างบัญชีใหม่' : 'ยินดีต้อนรับกลับมา'}</h1>
                     <p className="text-slate-400 text-sm mt-2">จัดการงานของคุณให้เป็นระบบกับ Cyne</p>
                 </div>
 

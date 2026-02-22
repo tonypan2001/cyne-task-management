@@ -65,7 +65,7 @@ export const MonthlySummary = ({ tasks, projects, currentReferenceDate }: Monthl
                             {summary.progress}% <span className="text-lg not-italic font-medium text-slate-400">Completed</span>
                         </h2>
                         <p className="text-slate-400 text-sm max-w-xs">
-                            คุณปันทำเป้าหมายเสร็จไปแล้ว {summary.completedCount} จากทั้งหมด {summary.totalTasks} งานในเดือนนี้ค่ะ เก่งมาก ๆ เลยค่ะ! 
+                            คุณทำเป้าหมายเสร็จไปแล้ว {summary.completedCount} จากทั้งหมด {summary.totalTasks} งานในเดือนนี้ เก่งมาก ๆ เลย! 
                         </p>
                     </div>
 

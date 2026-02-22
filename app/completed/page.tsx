@@ -50,7 +50,7 @@ export default function CompletedTasksPage() {
 
             <PageHeader
                 title="Hall of Fame"
-                subtitle={`คุณปันทำโปรเจกต์เสร็จสมบูรณ์ไปแล้ว ${completedTasks.length} รายการค่ะ ยอดเยี่ยมที่สุด!`}
+                subtitle={`คุณทำโปรเจกต์เสร็จสมบูรณ์ไปแล้ว ${completedTasks.length} รายการ ยอดเยี่ยมที่สุด!`}
                 icon={<Trophy size={16} className="text-yellow-500" />}
             >
                 <Link
@@ -67,7 +67,7 @@ export default function CompletedTasksPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {completedTasks.map((task) => (
                         <div key={task.id} className="opacity-70 hover:opacity-100 transition-all duration-500 hover:scale-[1.02]">
-                            {/* ✨ ส่ง projects เข้าไปเพื่อแก้ Error ts(2741) ค่ะ */}
+                            {/* ✨ ส่ง projects เข้าไปเพื่อแก้ Error ts(2741)  */}
                             <TaskCard task={task} projects={projects} />
                         </div>
                     ))}
@@ -78,7 +78,7 @@ export default function CompletedTasksPage() {
                         <Trophy size={40} />
                     </div>
                     <h3 className="text-xl font-black text-slate-800 italic uppercase">No Trophies Yet</h3>
-                    <p className="text-slate-400 mt-2 font-bold text-sm">สู้ๆ นะค๊ะคุณปัน งานที่ทำเสร็จจะมาโชว์ที่นี่เพื่อเป็นกำลังใจให้ค่ะ</p>
+                    <p className="text-slate-400 mt-2 font-bold text-sm">งานที่ทำเสร็จจะมาโชว์ที่นี่</p>
                     <Link
                         href="/"
                         className="inline-flex items-center gap-3 mt-8 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-blue-600 transition-all active:scale-95"

@@ -20,7 +20,7 @@ export const InviteModal = ({ isOpen, onClose, workspaceId }: InviteModalProps) 
     const [isSearching, setIsSearching] = useState(false)
     const [isInviting, setIsInviting] = useState(false)
 
-    // ✨ ระบบ Auto-complete: ค้นหาทันทีที่พิมพ์ (พร้อมหน่วงเวลา Debounce เล็กน้อยไม่ให้ยิง API รัวไปค๊ะ)
+    // ✨ ระบบ Auto-complete: ค้นหาทันทีที่พิมพ์ (พร้อมหน่วงเวลา Debounce เล็กน้อยไม่ให้ยิง API รัวไป)
     useEffect(() => {
         if (!searchTerm.trim()) {
             setSearchResults([])
@@ -30,7 +30,7 @@ export const InviteModal = ({ isOpen, onClose, workspaceId }: InviteModalProps) 
         const delaySearch = setTimeout(async () => {
             setIsSearching(true)
             try {
-                // เรียกใช้ฟังก์ชัน SQL ที่เราเพิ่งสร้างไปค๊ะ
+                // เรียกใช้ฟังก์ชัน SQL ที่เราเพิ่งสร้างไป
                 const { data, error } = await supabase.rpc('search_users_by_email', {
                     search_term: searchTerm
                 })
@@ -42,7 +42,7 @@ export const InviteModal = ({ isOpen, onClose, workspaceId }: InviteModalProps) 
             } finally {
                 setIsSearching(false)
             }
-        }, 300) // หน่วง 300ms ค๊ะ
+        }, 300) // หน่วง 300ms 
 
         return () => clearTimeout(delaySearch)
     }, [searchTerm, supabase])
@@ -60,18 +60,18 @@ export const InviteModal = ({ isOpen, onClose, workspaceId }: InviteModalProps) 
 
             if (error) {
                 if (error.code === '23505') {
-                    showToast('Already a member', 'warning', `${email} อยู่ในพื้นที่ทำงานนี้อยู่แล้วค๊ะ`)
+                    showToast('Already a member', 'warning', `${email} อยู่ในพื้นที่ทำงานนี้อยู่แล้ว`)
                 } else {
                     throw error
                 }
                 return
             }
 
-            showToast('User Added', 'success', `เพิ่ม ${email} เข้าสู่ Workspace สำเร็จแล้วค๊ะ`)
+            showToast('User Added', 'success', `เพิ่ม ${email} เข้าสู่ Workspace สำเร็จแล้ว`)
             setSearchTerm('')
             onClose()
         } catch (_) {
-            if (_) showToast('Failed to add user', 'error', 'ไม่สามารถเพิ่มผู้ใช้ได้ค๊ะ')
+            if (_) showToast('Failed to add user', 'error', 'ไม่สามารถเพิ่มผู้ใช้ได้')
         } finally {
             setIsInviting(false)
         }
@@ -93,9 +93,9 @@ export const InviteModal = ({ isOpen, onClose, workspaceId }: InviteModalProps) 
                     </div>
                     <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-800">Invite Team</h3>
                 </div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8 ml-1">ค้นหาอีเมลเพื่อเพิ่มทีมเวิร์คเข้าโปรเจกต์ค๊ะ</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8 ml-1">ค้นหาอีเมลเพื่อเพิ่มทีมเวิร์คเข้าโปรเจกต์</p>
 
-                {/* 🛠️ ครอบก้อนนี้ด้วย relative เพื่อให้ Dropdown อิงตำแหน่งจากก้อนนี้ค๊ะ */}
+                {/* 🛠️ ครอบก้อนนี้ด้วย relative เพื่อให้ Dropdown อิงตำแหน่งจากก้อนนี้ */}
                 <div className="relative">
                     {/* Search Input */}
                     <div className="relative">

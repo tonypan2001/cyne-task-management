@@ -1,5 +1,5 @@
 import { TaskStatusCardProps } from '@/types/task'
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react' // ✨ เพิ่ม Loader2 ค๊ะ
+import { CheckCircle2, Circle, Loader2 } from 'lucide-react' // ✨ เพิ่ม Loader2 
 
 export const TaskStatusCard = ({ isCompleted, progress, onToggle, isLoading }: TaskStatusCardProps & { isLoading?: boolean }) => (
     <div className="bg-slate-900 text-white rounded-[3rem] p-8 md:p-10 shadow-2xl shadow-blue-900/20 relative overflow-hidden group">
@@ -11,13 +11,13 @@ export const TaskStatusCard = ({ isCompleted, progress, onToggle, isLoading }: T
                 </div>
                 <button
                     onClick={onToggle}
-                    disabled={isLoading} // 🔒 ล็อกปุ่มตอนกำลังอัปเดตค๊ะ
+                    disabled={isLoading} // 🔒 ล็อกปุ่มตอนกำลังอัปเดต
                     className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isCompleted
                             ? 'bg-green-500 text-white'
                             : 'bg-blue-600 text-white hover:bg-white hover:text-slate-900'
                         } ${isLoading ? 'opacity-70 cursor-not-allowed' : 'active:scale-95'}`}
                 >
-                    {/* ✨ แสดง Spinner เมื่อกำลังโหลด ถ้าไม่โหลดแสดงข้อความปกติค๊ะ */}
+                    {/* ✨ แสดง Spinner เมื่อกำลังโหลด ถ้าไม่โหลดแสดงข้อความปกติ */}
                     {isLoading ? (
                         <>
                             <Loader2 size={14} className="animate-spin" />

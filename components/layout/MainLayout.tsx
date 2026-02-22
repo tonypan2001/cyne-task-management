@@ -20,10 +20,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     </aside>
                 )}
 
-                {/* ✨ เปลี่ยน Padding ออกจาก main ย้ายไปไว้ที่ div ด้านใน เพื่อให้ TopBar ติดขอบบนสุดค๊ะ */}
+                {/* ✨ เปลี่ยน Padding ออกจาก main ย้ายไปไว้ที่ div ด้านใน เพื่อให้ TopBar ติดขอบบนสุด */}
                 <main className="flex-1 min-w-0 h-screen overflow-y-auto bg-slate-50 relative">
 
-                    {/* ✨ โชว์ TopBar เฉพาะหน้าที่มี Sidebar ค๊ะ */}
+                    {/* ✨ โชว์ TopBar เฉพาะหน้าที่มี Sidebar  */}
                     {showSidebar && <TopBar />}
 
                     <div className="p-6 md:p-10 lg:p-12 max-w-[1440px] mx-auto">

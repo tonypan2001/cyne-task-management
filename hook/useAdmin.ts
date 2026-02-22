@@ -14,7 +14,7 @@ export const useAdmin = () => {
                 // ✨ ดึง User จาก Session ปัจจุบัน
                 const { data: { user } } = await supabase.auth.getUser()
 
-                // ✨ ดึง Email จาก .env (ตรวจสอบว่าชื่อตัวแปรตรงกับใน .env.local นะค๊ะ)
+                // ✨ ดึง Email จาก .env (ตรวจสอบว่าชื่อตัวแปรตรงกับใน .env.local นะ)
                 const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
                 if (user && user.email === adminEmail) {
@@ -31,9 +31,9 @@ export const useAdmin = () => {
 
         checkUser()
 
-        // 💡 เพิ่ม supabase.auth เข้าไปใน dependency array ตามที่มันแจ้งเตือนค่ะ
+        // 💡 เพิ่ม supabase.auth เข้าไปใน dependency array ตามที่มันแจ้งเตือน
         // การใส่เข้าไปจะช่วยให้ถ้าสถานะการ Login เปลี่ยน (เช่น Logout แล้ว Login ใหม่ด้วยเมลอื่น) 
-        // ตัว Hook นี้จะทำงานใหม่ทันทีเพื่อให้สิทธิ์ถูกต้องเสมอค๊ะ
+        // ตัว Hook นี้จะทำงานใหม่ทันทีเพื่อให้สิทธิ์ถูกต้องเสมอ
     }, [supabase.auth])
 
     return { isAdmin, loading }

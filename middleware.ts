@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.get(name)?.value
                 },
                 set(name: string, value: string, options: CookieOptions) {
-                    // ✨ แก้ไขโดยการระบุค่าให้ชัดเจน ไม่ใช้ shorthand ที่มีปัญหาค่ะ
+                    // ✨ แก้ไขโดยการระบุค่าให้ชัดเจน ไม่ใช้ shorthand ที่มีปัญหา
                     request.cookies.set({ name: name, value: value, ...options })
                     response = NextResponse.next({
                         request: {
@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
                     response.cookies.set({ name: name, value: value, ...options })
                 },
                 remove(name: string, options: CookieOptions) {
-                    // ✨ สำหรับ remove เราจะตั้งค่า value เป็นค่าว่างค่ะ
+                    // ✨ สำหรับ remove เราจะตั้งค่า value เป็นค่าว่าง
                     request.cookies.set({ name: name, value: '', ...options })
                     response = NextResponse.next({
                         request: {

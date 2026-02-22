@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation' // ✨ 1. นำเข้า useRouter ค๊ะ
+import { useRouter } from 'next/navigation' // ✨ 1. นำเข้า useRouter 
 import { createClient } from '@/lib/supabase'
 import { Search, LayoutGrid, Filter, Plus, Flame, CheckCircle2, X } from 'lucide-react'
 import Link from 'next/link'
@@ -17,7 +17,7 @@ import { useAdmin } from '@/hook/useAdmin'
 
 export default function DashboardPage() {
   const supabase = createClient()
-  const router = useRouter() // ✨ 2. เรียกใช้ router ค๊ะ
+  const router = useRouter() // ✨ 2. เรียกใช้ router 
 
   const { isAdmin, loading: adminLoading } = useAdmin()
 
@@ -35,10 +35,10 @@ export default function DashboardPage() {
   // --- 1. Fetch Data ---
   useEffect(() => {
     async function fetchData() {
-      // ✨ 3. เช็ค Workspace ID จาก LocalStorage ค๊ะ
+      // ✨ 3. เช็ค Workspace ID จาก LocalStorage 
       const workspaceId = localStorage.getItem('active_workspace_id')
 
-      // ถ้าไม่มีให้เด้งกลับไปหน้าเลือก Workspace ทันทีค๊ะ
+      // ถ้าไม่มีให้เด้งกลับไปหน้าเลือก Workspace ทันที
       if (!workspaceId) {
         router.push('/workspaces')
         return
@@ -52,14 +52,14 @@ export default function DashboardPage() {
             .eq('id', workspaceId)
             .single()
 
-        // ✨ ถ้าไม่มีสิทธิ์ (RLS บล็อก) หรือไม่พบข้อมูล ให้ล้าง LocalStorage แล้วเตะไปหน้าเลือกค๊ะ
+        // ✨ ถ้าไม่มีสิทธิ์ (RLS บล็อก) หรือไม่พบข้อมูล ให้ล้าง LocalStorage แล้วเตะไปหน้าเลือก
         if (wsError || !wsCheck) {
             localStorage.removeItem('active_workspace_id')
             router.push('/workspaces')
             return
         }
         const [tRes, pRes] = await Promise.all([
-          // ✨ 4. เติม .eq('workspace_id', workspaceId) เพื่อกรองข้อมูลให้ตรงกับพื้นที่ทำงานค๊ะ
+          // ✨ 4. เติม .eq('workspace_id', workspaceId) เพื่อกรองข้อมูลให้ตรงกับพื้นที่ทำงาน
           supabase.from('tasks').select('*').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
           supabase.from('projects').select('*').eq('workspace_id', workspaceId).order('name')
         ])
@@ -73,7 +73,7 @@ export default function DashboardPage() {
       }
     }
     fetchData()
-  }, [supabase, router]) // ✨ อย่าลืมใส่ router ใน dependency ด้วยนะค๊ะ
+  }, [supabase, router]) // ✨ อย่าลืมใส่ router ใน dependency ด้วยนะ
 
   const overdueTasks = useMemo(() => {
     const today = new Date();

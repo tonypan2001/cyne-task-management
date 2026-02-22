@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { lineSeed } from './fonts'
-import MainLayout from '@/components/layout/MainLayout' // ✨ นำเข้าตัวที่เราสร้างตะกี้ค่ะ
+import MainLayout from '@/components/layout/MainLayout' // ✨ นำเข้าตัวที่เราสร้างตะกี้
 
 export const metadata: Metadata = {
   title: 'Cyne | Creative Management',
@@ -16,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${lineSeed.variable}`}>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
-        {/* ✨ ใช้ MainLayout มาคุมเนื้อหาข้างในแทนค่ะ */}
+        {/* ✨ ใช้ MainLayout มาคุมเนื้อหาข้างในแทน */}
         <MainLayout>
           {children}
         </MainLayout>

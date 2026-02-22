@@ -13,7 +13,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
         const id = Math.random().toString(36).substr(2, 9);
         setToasts((prev) => [...prev, { id, title, type, description }]);
 
-        // ตั้งเวลาลบ Toast ออกหลังจาก 4 วินาทีค๊ะ
+        // ตั้งเวลาลบ Toast ออกหลังจาก 4 วินาที
         setTimeout(() => {
             setToasts((prev) => prev.filter((toast) => toast.id !== id));
         }, 4000);

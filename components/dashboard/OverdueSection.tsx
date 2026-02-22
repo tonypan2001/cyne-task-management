@@ -24,7 +24,7 @@ export const OverdueSection = ({ tasks, projects }: OverdueSectionProps) => {
                             Overdue Tasks
                         </h3>
                         <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
-                            งานที่ยังค้างอยู่จากวันก่อนค่ะ
+                            งานที่ยังค้างอยู่จากวันก่อน
                         </p>
                     </div>
                 </div>

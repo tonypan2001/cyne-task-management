@@ -6,7 +6,7 @@ import { Task, Project } from '@/types/task'
 
 interface TaskCardProps {
     task: Task
-    projects: Project[] // ✨ รับ projects เข้ามาเพื่อหาชื่อโปรเจกต์ค่ะ
+    projects: Project[] // ✨ รับ projects เข้ามาเพื่อหาชื่อโปรเจกต์
 }
 
 export const TaskCard = ({ task, projects }: TaskCardProps) => {

@@ -13,7 +13,7 @@ export default function Sidebar() {
     const router = useRouter()
     const supabase = createClient()
 
-    // ✨ ใช้ adminLoading เพื่อรอสถานะการเช็คสิทธิ์ให้ชัวร์ก่อนค่ะ
+    // ✨ ใช้ adminLoading เพื่อรอสถานะการเช็คสิทธิ์ให้ชัวร์ก่อน
     const { isAdmin, loading: adminLoading } = useAdmin()
 
     const [displayName, setDisplayName] = useState<string>('Loading...')
@@ -30,7 +30,7 @@ export default function Sidebar() {
     }, [supabase.auth])
 
     const handleLogout = async () => {
-        // ✨ ล้างความจำ Workspace ก่อนออกจากระบบค๊ะ
+        // ✨ ล้างความจำ Workspace ก่อนออกจากระบบ
         localStorage.removeItem('active_workspace_id')
         await supabase.auth.signOut()
         router.push('/auth')
@@ -57,7 +57,7 @@ export default function Sidebar() {
             <nav className="flex-1 px-4 space-y-1.5">
                 <p className="px-4 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4">Main Menu</p>
                 {menuItems.map((item) => {
-                    // ✨ 1. เช็คเงื่อนไข: ถ้าชื่อเมนูคือ "สร้างงานใหม่" และไม่ใช่แอดมิน ให้ข้ามไปเลยค่ะ
+                    // ✨ 1. เช็คเงื่อนไข: ถ้าชื่อเมนูคือ "สร้างงานใหม่" และไม่ใช่แอดมิน ให้ข้ามไปเลย
                     if (item.name === 'สร้างงานใหม่' && !adminLoading && !isAdmin) {
                         return null;
                     }

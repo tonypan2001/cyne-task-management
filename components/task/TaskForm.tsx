@@ -7,10 +7,10 @@ import {
 } from 'lucide-react'
 import NextImage from 'next/image'
 import { TaskFormProps } from '@/types/task'
-import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Toast ค๊ะ
+import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Toast 
 
 export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDeleteProject, loading }: TaskFormProps) => {
-    const { showToast } = useToast() // ✨ เรียกใช้ระบบแจ้งเตือนค๊ะ
+    const { showToast } = useToast() // ✨ เรียกใช้ระบบแจ้งเตือน
 
     // --- States ---
     const [title, setTitle] = useState(initialData?.title || '')
@@ -39,12 +39,12 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
         }
     }
 
-    // ✨ แก้ไขจุดนี้: ตัด confirm() ออก และส่งต่อไปให้หน้าหลักจัดการผ่าน Modal ค๊ะ
+    // ✨ แก้ไขจุดนี้: ตัด confirm() ออก และส่งต่อไปให้หน้าหลักจัดการผ่าน Modal 
     const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
         e.stopPropagation()
         if (onDeleteProject) {
             const success = await onDeleteProject(projectId)
-            // ถ้าลบสำเร็จ (ผ่าน Modal ในหน้าหลัก) และตรงกับที่เลือกอยู่ ให้ล้างค่าที่เลือกค๊ะ
+            // ถ้าลบสำเร็จ (ผ่าน Modal ในหน้าหลัก) และตรงกับที่เลือกอยู่ ให้ล้างค่าที่เลือก
             if (success && selectedProjectId === projectId) {
                 setSelectedProjectId('')
             }
@@ -76,9 +76,9 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
 
-        // ✨ เปลี่ยนจาก alert() เป็น showToast() ค๊ะ
+        // ✨ เปลี่ยนจาก alert() เป็น showToast() 
         if (!selectedProjectId) {
-            showToast('Missing Info', 'warning', 'กรุณาเลือกโปรเจกต์ก่อนดำเนินการนะค๊ะ')
+            showToast('Missing Info', 'warning', 'กรุณาเลือกโปรเจกต์ก่อนดำเนินการนะ')
             return
         }
 
@@ -127,7 +127,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                             </button>
                             <button
                                 type="button"
-                                onClick={(e) => handleDeleteProject(e, p.id)} // ✨ ส่งแค่ id ไปให้หน้าหลักค๊ะ
+                                onClick={(e) => handleDeleteProject(e, p.id)} // ✨ ส่งแค่ id ไปให้หน้าหลัก
                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                             >
                                 <Trash2 size={12} />

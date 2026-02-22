@@ -30,7 +30,7 @@ export default function WorkspaceSelectionPage() {
             if (error) throw error
             if (data) setWorkspaces(data as Workspace[])
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถโหลดข้อมูล Workspace ได้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถโหลดข้อมูล Workspace ได้')
         } finally {
             setLoading(false)
         }
@@ -64,20 +64,20 @@ export default function WorkspaceSelectionPage() {
                 setWorkspaces([...workspaces, data as Workspace])
                 setNewWorkspaceName('')
                 setIsModalOpen(false)
-                showToast('Success', 'success', 'สร้างพื้นที่ทำงานใหม่เรียบร้อยแล้วค๊ะ')
+                showToast('Success', 'success', 'สร้างพื้นที่ทำงานใหม่เรียบร้อยแล้ว')
             }
         } catch (_) {
-            if (_) showToast('Creation Failed', 'error', 'ไม่สามารถสร้าง Workspace ได้ค๊ะ')
+            if (_) showToast('Creation Failed', 'error', 'ไม่สามารถสร้าง Workspace ได้')
         } finally {
             setIsCreating(false)
         }
     }
 
     const handleSelectWorkspace = (workspaceId: string) => {
-        // ✨ บันทึก Workspace ที่เลือกลง LocalStorage ชั่วคราว (หรือจะส่งผ่าน URL ก็ได้ค๊ะ)
+        // ✨ บันทึก Workspace ที่เลือกลง LocalStorage ชั่วคราว (หรือจะส่งผ่าน URL ก็ได้)
         localStorage.setItem('active_workspace_id', workspaceId)
 
-        // พาไปยังหน้า Dashboard (เดี๋ยวเราค่อยไปปรับหน้า Dashboard ให้ดึงเฉพาะข้อมูลของ ID นี้ค๊ะ)
+        // พาไปยังหน้า Dashboard (เดี๋ยวเราค่อยไปปรับหน้า Dashboard ให้ดึงเฉพาะข้อมูลของ ID นี้)
         router.push('/')
     }
 
@@ -105,7 +105,7 @@ export default function WorkspaceSelectionPage() {
                         Select Workspace
                     </h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        เลือกพื้นที่ทำงานที่คุณต้องการจัดการในขณะนี้ค๊ะ
+                        เลือกพื้นที่ทำงานที่คุณต้องการจัดการในขณะนี้
                     </p>
                 </div>
 
@@ -153,7 +153,7 @@ export default function WorkspaceSelectionPage() {
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in" onClick={() => !isCreating && setIsModalOpen(false)} />
                     <form onSubmit={handleCreateWorkspace} className="relative bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in zoom-in-95">
                         <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-800 mb-2">New Workspace</h3>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8">ตั้งชื่อพื้นที่ทำงานใหม่เพื่อแยกโปรเจกต์ของคุณค๊ะ</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-8">ตั้งชื่อพื้นที่ทำงานใหม่เพื่อแยกโปรเจกต์ของคุณ</p>
 
                         <input
                             autoFocus

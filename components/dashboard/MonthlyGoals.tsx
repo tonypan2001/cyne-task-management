@@ -63,7 +63,7 @@ export const MonthlyGoals = ({ tasks, projects, currentReferenceDate }: MonthlyG
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projectStats.map((proj) => (
-                    /* ✨ เปลี่ยนจาก div เป็น Link เพื่อให้กดไปหน้า Project Detail ได้ค่ะ */
+                    /* ✨ เปลี่ยนจาก div เป็น Link เพื่อให้กดไปหน้า Project Detail ได้ */
                     <Link
                         href={`/project/${proj.id}`}
                         key={proj.id}

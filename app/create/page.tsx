@@ -50,7 +50,7 @@ export default function CreateTaskPage() {
             
             if (data) setProjects(data as Project[])
         } catch (_) {
-            if (_) showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลโปรเจกต์ได้ค๊ะ')
+            if (_) showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลโปรเจกต์ได้')
         } finally {
             setIsPageLoading(false)
         }
@@ -65,7 +65,7 @@ export default function CreateTaskPage() {
     // --- 3. สร้าง Project (แนบ Workspace ID) ---
     const handleCreateProject = async (name: string) => {
         if (!workspaceId) {
-            showToast('Error', 'error', 'ไม่พบข้อมูล Workspace ปัจจุบันค๊ะ')
+            showToast('Error', 'error', 'ไม่พบข้อมูล Workspace ปัจจุบัน')
             return null
         }
 
@@ -85,7 +85,7 @@ export default function CreateTaskPage() {
 
             if (error) {
                 if (error.code === '23505') {
-                    showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วในพื้นที่ทำงานนี้ค่ะ')
+                    showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วในพื้นที่ทำงานนี้')
                 } else {
                     throw error
                 }
@@ -94,12 +94,12 @@ export default function CreateTaskPage() {
 
             if (data) {
                 setProjects(prev => [...prev, data as Project])
-                showToast('Success', 'success', 'เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้วค่ะ')
+                showToast('Success', 'success', 'เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้ว')
                 return data.id
             }
             return null
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถสร้างโปรเจกต์ได้ในขณะนี้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถสร้างโปรเจกต์ได้ในขณะนี้')
             return null
         }
     }
@@ -115,7 +115,7 @@ export default function CreateTaskPage() {
             if (error) throw error
 
             if (count && count > 0) {
-                showToast('Cannot Delete', 'warning', `โปรเจกต์นี้ยังมีงานค้างอยู่ ${count} รายการค๊ะ`)
+                showToast('Cannot Delete', 'warning', `โปรเจกต์นี้ยังมีงานค้างอยู่ ${count} รายการ`)
                 return false
             }
 
@@ -123,7 +123,7 @@ export default function CreateTaskPage() {
             setIsDeleteModalOpen(true)
             return false 
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้')
             return false
         }
     }
@@ -141,10 +141,10 @@ export default function CreateTaskPage() {
             if (error) throw error
 
             setProjects(prev => prev.filter(p => p.id !== projectToDelete))
-            showToast('Project Removed', 'success', 'ลบโปรเจกต์ออกจากระบบแล้วค่ะ')
+            showToast('Project Removed', 'success', 'ลบโปรเจกต์ออกจากระบบแล้ว')
             setIsDeleteModalOpen(false)
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
             showToast('Delete Failed', 'error', msg)
         } finally {
             setIsDeletingProject(false)
@@ -160,7 +160,7 @@ export default function CreateTaskPage() {
         try {
             const { data: userData } = await supabase.auth.getUser()
             const user = userData.user
-            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนดำเนินการนะค๊ะ')
+            if (!user) throw new Error('กรุณาเข้าสู่ระบบก่อนดำเนินการนะ')
 
             let imageUrl = ''
             if (formData.imageFile) {
@@ -192,11 +192,11 @@ export default function CreateTaskPage() {
                 )
             }
 
-            showToast('Task Created', 'success', 'สร้างงานใหม่เข้าสู่ระบบสำเร็จแล้วค๊ะ')
+            showToast('Task Created', 'success', 'สร้างงานใหม่เข้าสู่ระบบสำเร็จแล้ว')
             router.push('/')
             router.refresh()
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
             showToast('Creation Failed', 'error', msg)
         } finally {
             setLoading(false)
@@ -216,7 +216,7 @@ export default function CreateTaskPage() {
         <div className="max-w-4xl mx-auto p-6 md:p-10 animate-in fade-in duration-700">
             <PageHeader
                 title="Create Task"
-                subtitle="เพิ่มงานใหม่เข้าสู่พื้นที่ทำงานปัจจุบันของคุณค๊ะ"
+                subtitle="เพิ่มงานใหม่เข้าสู่พื้นที่ทำงานปัจจุบันของคุณ"
                 icon={<Plus size={16} />}
             />
 
@@ -234,7 +234,7 @@ export default function CreateTaskPage() {
                 onConfirm={confirmDeleteProject}
                 isLoading={isDeletingProject}
                 title="Remove Project?"
-                description="โปรเจกต์นี้จะถูกลบออกจากระบบอย่างถาวรค๊ะ"
+                description="โปรเจกต์นี้จะถูกลบออกจากระบบอย่างถาวร"
                 confirmText="Yes, Remove it"
             />
         </div>

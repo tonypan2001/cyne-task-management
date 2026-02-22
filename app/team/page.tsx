@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { useToast } from '@/components/shared/ToastProvider'
 import { ConfirmModal } from '@/components/shared/ConfirmModal'
 
-// สร้าง Type สำหรับรับค่าจาก SQL Function ของเราค๊ะ
+// สร้าง Type สำหรับรับค่าจาก SQL Function ของเรา
 interface TeamMember {
     member_id: string
     user_id: string
@@ -43,7 +43,7 @@ export default function TeamPage() {
     const fetchMembers = useCallback(async () => {
         if (!workspaceId) return
         try {
-            // ✨ เรียกใช้ SQL Function ที่เราเพิ่งสร้างค๊ะ
+            // ✨ เรียกใช้ SQL Function ที่เราเพิ่งสร้าง
             const { data, error } = await supabase.rpc('get_workspace_members', {
                 ws_id: workspaceId
             })
@@ -51,7 +51,7 @@ export default function TeamPage() {
             if (error) throw error
             if (data) setMembers(data as TeamMember[])
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถโหลดรายชื่อทีมได้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถโหลดรายชื่อทีมได้')
         } finally {
             setLoading(false)
         }
@@ -65,7 +65,7 @@ export default function TeamPage() {
 
     const handleRemoveClick = (member: TeamMember) => {
         if (member.role === 'owner') {
-            showToast('Permission Denied', 'warning', 'ไม่สามารถลบ Owner ออกจากพื้นที่ทำงานได้ค๊ะ')
+            showToast('Permission Denied', 'warning', 'ไม่สามารถลบ Owner ออกจากพื้นที่ทำงานได้')
             return
         }
         setMemberToRemove(member)
@@ -80,15 +80,15 @@ export default function TeamPage() {
             const { error } = await supabase
                 .from('workspace_members')
                 .delete()
-                .eq('id', memberToRemove.member_id) // ลบจาก ID ของตารางสมาชิกค๊ะ
+                .eq('id', memberToRemove.member_id) // ลบจาก ID ของตารางสมาชิก
 
             if (error) throw error
 
             setMembers(prev => prev.filter(m => m.member_id !== memberToRemove.member_id))
-            showToast('Member Removed', 'success', `นำ ${memberToRemove.email} ออกจากทีมเรียบร้อยแล้วค๊ะ`)
+            showToast('Member Removed', 'success', `นำ ${memberToRemove.email} ออกจากทีมเรียบร้อยแล้ว`)
             setIsDeleteModalOpen(false)
         } catch (_) {
-            if (_) showToast('Failed to remove', 'error', 'เกิดข้อผิดพลาดในการลบสมาชิกค๊ะ')
+            if (_) showToast('Failed to remove', 'error', 'เกิดข้อผิดพลาดในการลบสมาชิก')
         } finally {
             setIsRemoving(false)
             setMemberToRemove(null)
@@ -108,7 +108,7 @@ export default function TeamPage() {
         <div className="max-w-5xl mx-auto p-6 md:p-10 animate-in fade-in duration-700">
             <PageHeader
                 title="Team Management"
-                subtitle="จัดการรายชื่อสมาชิกในพื้นที่ทำงานนี้ค๊ะ"
+                subtitle="จัดการรายชื่อสมาชิกในพื้นที่ทำงานนี้"
                 icon={<Users size={16} />}
             />
 
@@ -158,7 +158,7 @@ export default function TeamPage() {
                 onConfirm={confirmRemoveMember}
                 isLoading={isRemoving}
                 title="Remove Member?"
-                description={`คุณแน่ใจนะค๊ะว่าจะนำ ${memberToRemove?.email} ออกจากพื้นที่ทำงานนี้?\nงานที่เขารับผิดชอบอยู่จะยังคงอยู่ แต่เขาจะไม่สามารถเข้าถึง Workspace นี้ได้อีกค๊ะ`}
+                description={`คุณแน่ใจนะว่าจะนำ ${memberToRemove?.email} ออกจากพื้นที่ทำงานนี้?\nงานที่เขารับผิดชอบอยู่จะยังคงอยู่ แต่เขาจะไม่สามารถเข้าถึง Workspace นี้ได้อีก`}
                 confirmText="Yes, Remove"
             />
         </div>

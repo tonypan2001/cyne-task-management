@@ -53,7 +53,7 @@ export default function TaskDetailPage() {
 
     // --- 2. Fetch Data ---
     const fetchData = useCallback(async () => {
-        if (!id || !workspaceId) return // ✨ รอให้ได้ Workspace ก่อนถึงจะโหลดค๊ะ
+        if (!id || !workspaceId) return // ✨ รอให้ได้ Workspace ก่อนถึงจะโหลด
 
         try {
             const [tRes, stRes, cRes] = await Promise.all([
@@ -67,7 +67,7 @@ export default function TaskDetailPage() {
 
                 // 🔒 เช็คความปลอดภัย: งานนี้อยู่ใน Workspace นี้จริงๆ ใช่ไหม?
                 if (fetchedTask.workspace_id !== workspaceId) {
-                    showToast('Access Denied', 'error', 'งานนี้ไม่ได้อยู่ในพื้นที่ทำงานปัจจุบันค๊ะ')
+                    showToast('Access Denied', 'error', 'งานนี้ไม่ได้อยู่ในพื้นที่ทำงานปัจจุบัน')
                     router.push('/')
                     return
                 }
@@ -79,7 +79,7 @@ export default function TaskDetailPage() {
             if (cRes.data) setComments(cRes.data as TaskComment[])
         } catch (err) {
             console.error('Error fetching task details:', err)
-            showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลรายละเอียดงานได้ค่ะ')
+            showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลรายละเอียดงานได้')
         } finally {
             setLoading(false)
         }
@@ -99,7 +99,7 @@ export default function TaskDetailPage() {
             if (error) throw error
 
             setIsModalOpen(false)
-            showToast('Task Deleted', 'success', 'ลบงานออกจากระบบเรียบร้อยแล้วค่ะ')
+            showToast('Task Deleted', 'success', 'ลบงานออกจากระบบเรียบร้อยแล้ว')
 
             router.push('/')
             router.refresh()
@@ -132,7 +132,7 @@ export default function TaskDetailPage() {
             if (error) throw error
             if (data) {
                 setComments([data as TaskComment, ...comments])
-                showToast('Comment Sent', 'success', 'ส่งข้อความสำเร็จแล้วค่ะ')
+                showToast('Comment Sent', 'success', 'ส่งข้อความสำเร็จแล้ว')
             }
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -197,7 +197,7 @@ export default function TaskDetailPage() {
 
             <PageHeader
                 title={task.title}
-                subtitle={task.description || 'ไม่มีคำอธิบายสำหรับงานชิ้นนี้ค่ะ'}
+                subtitle={task.description || 'ไม่มีคำอธิบายสำหรับงานชิ้นนี้'}
                 icon={<Briefcase size={14} />}
             />
 
@@ -256,7 +256,7 @@ export default function TaskDetailPage() {
                                 ))}
                                 {subTasks.length === 0 && (
                                     <div className="flex items-center gap-2 p-6 bg-slate-50 rounded-2xl text-slate-300 italic text-xs">
-                                        <AlertCircle size={14} /> ไม่มีรายการขั้นตอนย่อยในงานนี้ค่ะ
+                                        <AlertCircle size={14} /> ไม่มีรายการขั้นตอนย่อยในงานนี้
                                     </div>
                                 )}
                             </div>
@@ -278,7 +278,7 @@ export default function TaskDetailPage() {
                                 if (error) throw error
 
                                 setTask({ ...task, is_completed: newStatus })
-                                showToast('Status Changed', 'success', `เปลี่ยนสถานะเป็น ${newStatus ? 'เสร็จสิ้น' : 'กำลังดำเนินการ'} แล้วค๊ะ`)
+                                showToast('Status Changed', 'success', `เปลี่ยนสถานะเป็น ${newStatus ? 'เสร็จสิ้น' : 'กำลังดำเนินการ'} แล้ว`)
                                 router.refresh()
                             } catch (err: unknown) {
                                 const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';

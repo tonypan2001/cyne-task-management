@@ -58,7 +58,7 @@ export default function EditTaskPage() {
 
                 // 🔒 เช็คว่างานนี้อยู่ใน Workspace ปัจจุบันหรือไม่
                 if (task.workspace_id && task.workspace_id !== workspaceId) {
-                    showToast('Access Denied', 'error', 'งานนี้ไม่ได้อยู่ในพื้นที่ทำงานปัจจุบันค๊ะ')
+                    showToast('Access Denied', 'error', 'งานนี้ไม่ได้อยู่ในพื้นที่ทำงานปัจจุบัน')
                     router.push('/')
                     return
                 }
@@ -75,7 +75,7 @@ export default function EditTaskPage() {
             }
         } catch (err) {
             console.error('Error fetching edit data:', err)
-            showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลรายละเอียดงานได้ค๊ะ')
+            showToast('Sync Error', 'error', 'ไม่สามารถโหลดข้อมูลรายละเอียดงานได้')
         } finally {
             setFetching(false)
         }
@@ -101,16 +101,16 @@ export default function EditTaskPage() {
                 .single()
 
             if (error) {
-                if (error.code === '23505') showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้วค๊ะ')
+                if (error.code === '23505') showToast('Duplicate Name', 'warning', 'ชื่อโปรเจกต์นี้มีอยู่แล้ว')
                 return null
             }
             if (data) {
                 setProjects(prev => [...prev, data as Project])
-                showToast('Success', 'success', 'เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้วค๊ะ')
+                showToast('Success', 'success', 'เพิ่มโปรเจกต์ใหม่เรียบร้อยแล้ว')
                 return data.id
             }
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถสร้างโปรเจกต์ได้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถสร้างโปรเจกต์ได้')
         }
         return null
     }
@@ -120,14 +120,14 @@ export default function EditTaskPage() {
             const { count, error } = await supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
             if (error) throw error
             if (count && count > 0) {
-                showToast('Cannot Delete', 'warning', `โปรเจกต์นี้ยังมีงานค้างอยู่ ${count} รายการค๊ะ`)
+                showToast('Cannot Delete', 'warning', `โปรเจกต์นี้ยังมีงานค้างอยู่ ${count} รายการ`)
                 return false
             }
             setProjectToDelete(projectId)
             setIsDeleteModalOpen(true)
             return false
         } catch (_) {
-            if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้ค๊ะ')
+            if (_) showToast('Error', 'error', 'ไม่สามารถตรวจสอบข้อมูลได้')
             return false
         }
     }
@@ -139,10 +139,10 @@ export default function EditTaskPage() {
             const { error } = await supabase.from('projects').delete().eq('id', projectToDelete)
             if (error) throw error
             setProjects(prev => prev.filter(p => p.id !== projectToDelete))
-            showToast('Project Removed', 'success', 'ลบโปรเจกต์ออกจากระบบแล้วค๊ะ')
+            showToast('Project Removed', 'success', 'ลบโปรเจกต์ออกจากระบบแล้ว')
             setIsDeleteModalOpen(false)
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
             showToast('Delete Failed', 'error', msg)
         } finally {
             setIsDeletingProject(false)
@@ -179,11 +179,11 @@ export default function EditTaskPage() {
                 if (subError) throw subError
             }
 
-            showToast('Task Updated', 'success', 'บันทึกการแก้ไขงานสำเร็จแล้วค๊ะ')
+            showToast('Task Updated', 'success', 'บันทึกการแก้ไขงานสำเร็จแล้ว')
             router.push(`/task/${id}`)
             router.refresh()
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดค๊ะ'
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
             showToast('Update Failed', 'error', msg)
         } finally {
             setLoading(false)
@@ -208,7 +208,7 @@ export default function EditTaskPage() {
 
             <PageHeader
                 title="Edit Task"
-                subtitle="ปรับปรุงรายละเอียดงานในพื้นที่ทำงานนี้ค๊ะ"
+                subtitle="ปรับปรุงรายละเอียดงานในพื้นที่ทำงานนี้"
                 icon={<Edit3 size={16} />}
             />
 
@@ -230,7 +230,7 @@ export default function EditTaskPage() {
                 onConfirm={confirmDeleteProject}
                 isLoading={isDeletingProject}
                 title="Remove Project?"
-                description="โปรเจกต์นี้จะถูกลบออกจากระบบอย่างถาวรค๊ะ"
+                description="โปรเจกต์นี้จะถูกลบออกจากระบบอย่างถาวร"
                 confirmText="Yes, Remove it"
             />
         </div>
