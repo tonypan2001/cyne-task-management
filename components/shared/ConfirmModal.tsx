@@ -49,21 +49,21 @@ export const ConfirmModal = ({
                         <AlertTriangle size={32} />
                     </div>
 
-                    <h3 className="text-xl font-black text-slate-800 italic uppercase tracking-tighter mb-2">
+                    <h3 className="text-2xl font-black text-slate-800 italic uppercase tracking-tighter mb-2">
                         {title}
                     </h3>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-6 whitespace-pre-line">
+                    <p className="text-sm font-bold text-slate-400 tracking-widest leading-relaxed mb-6 whitespace-pre-line">
                         {description}
                     </p>
 
                     {verifyText && (
                         <div className="w-full mb-8 text-left">
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 ml-1">
+                            <label className="block text-[10px] font-bold tracking-widest text-slate-500 mb-2 ml-1">
                                 พิมพ์ <span className="text-slate-800 font-black">&quot;{verifyText}&quot;</span> เพื่อยืนยัน
                             </label>
                             <input
                                 type="text"
-                                className={`w-full bg-slate-50 px-6 py-4 rounded-2xl border-none outline-none font-bold text-sm text-center focus:ring-4 transition-all ${isDanger ? 'focus:ring-red-100' : 'focus:ring-blue-100'}`}
+                                className={`w-full bg-slate-50 px-6 py-4 rounded-2xl border-none outline-none font-bold text-base text-center focus:ring-4 transition-all ${isDanger ? 'focus:ring-red-100' : 'focus:ring-blue-100'}`}
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 placeholder={verifyText}
