@@ -2,15 +2,28 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeftRight, Briefcase, UserPlus } from 'lucide-react'
-import { InviteModal } from '../workspace/InviteModal' // ✨ นำเข้า Modal 
+import { ArrowLeftRight, Briefcase, UserPlus, Trash2 } from 'lucide-react'
+import { InviteModal } from '../workspace/InviteModal'
+import { ConfirmModal } from '@/components/shared/ConfirmModal'
+import { useToast } from '@/components/shared/ToastProvider'
 
 export const TopBar = () => {
     const supabase = createClient()
+    const router = useRouter()
+    const { showToast } = useToast()
+
     const [workspaceName, setWorkspaceName] = useState<string>('Loading...')
     const [workspaceId, setWorkspaceId] = useState<string | null>(null)
-    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false) // ✨ State สำหรับเปิดปิด Modal
+
+    // State สำหรับเช็คสิทธิ์ Owner
+    const [isOwner, setIsOwner] = useState(false)
+
+    // Modal States
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     useEffect(() => {
         const fetchWorkspace = async () => {
@@ -20,16 +33,22 @@ export const TopBar = () => {
                 return
             }
 
-            setWorkspaceId(wsId) // ✨ เก็บค่า ID ไว้ส่งให้ Modal 
+            setWorkspaceId(wsId)
 
+            // ดึงข้อมูล User ปัจจุบัน
+            const { data: userData } = await supabase.auth.getUser()
+
+            // ดึงข้อมูล Workspace
             const { data } = await supabase
                 .from('workspaces')
-                .select('name')
+                .select('name, user_id')
                 .eq('id', wsId)
                 .single()
 
             if (data) {
                 setWorkspaceName(data.name)
+                // ตรวจสอบว่า User ปัจจุบัน เป็นเจ้าของ (user_id) ของ Workspace นี้หรือไม่
+                setIsOwner(data.user_id === userData.user?.id)
             } else {
                 setWorkspaceName('Unknown Workspace')
             }
@@ -37,6 +56,29 @@ export const TopBar = () => {
 
         fetchWorkspace()
     }, [supabase])
+
+    // ฟังก์ชันจัดการการลบ Workspace
+    const handleDeleteWorkspace = async () => {
+        if (!workspaceId) return
+        setIsDeleting(true)
+        try {
+            const { error } = await supabase.from('workspaces').delete().eq('id', workspaceId)
+            if (error) throw error
+
+            showToast('Workspace Deleted', 'success', 'ลบพื้นที่ทำงานเรียบร้อยแล้ว')
+
+            // ล้างค่าที่จำไว้แล้วส่งกลับไปหน้าเลือก Workspace
+            localStorage.removeItem('active_workspace_id')
+            router.push('/workspaces')
+            router.refresh()
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการลบ'
+            showToast('Delete Failed', 'error', msg)
+        } finally {
+            setIsDeleting(false)
+            setIsDeleteModalOpen(false)
+        }
+    }
 
     return (
         <>
@@ -51,9 +93,18 @@ export const TopBar = () => {
                     </div>
                 </div>
 
-                {/* กลุ่มปุ่มฝั่งขวา */}
                 <div className="flex items-center gap-3">
-                    {/* ✨ ปุ่ม Invite Team */}
+                    {/* ปุ่ม Delete จะถูกเรนเดอร์ก็ต่อเมื่อ isOwner เป็น true เท่านั้น */}
+                    {workspaceId && isOwner && (
+                        <button
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2.5 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                            title="Delete Workspace"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )}
+
                     {workspaceId && (
                         <button
                             onClick={() => setIsInviteModalOpen(true)}
@@ -69,17 +120,30 @@ export const TopBar = () => {
                         className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
                     >
                         <ArrowLeftRight size={14} />
-                        <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">Switch Workspace</span>
+                        <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">Switch</span>
                     </Link>
                 </div>
             </div>
 
-            {/* ✨ เรียกใช้งาน Modal  */}
+            {/* โหลด Modal (ซ่อนอยู่จนกว่าจะถูกเรียก) */}
             {workspaceId && (
                 <InviteModal
                     isOpen={isInviteModalOpen}
                     onClose={() => setIsInviteModalOpen(false)}
                     workspaceId={workspaceId}
+                />
+            )}
+
+            {workspaceId && isOwner && (
+                <ConfirmModal
+                    isOpen={isDeleteModalOpen}
+                    onClose={() => setIsDeleteModalOpen(false)}
+                    onConfirm={handleDeleteWorkspace}
+                    isLoading={isDeleting}
+                    title="Delete Workspace?"
+                    description={`การกระทำนี้ไม่สามารถย้อนกลับได้ โปรเจกต์ งาน และข้อมูลทั้งหมดใน "${workspaceName}" จะถูกลบอย่างถาวร`}
+                    confirmText="Yes, Delete Workspace"
+                    verifyText={workspaceName}
                 />
             )}
         </>
