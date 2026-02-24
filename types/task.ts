@@ -27,6 +27,7 @@ export interface Task {
     is_completed: boolean;
     due_date: string | null;
     priority: 'High' | 'Medium' | 'Low' | null;
+    sub_tasks?: SubTask[];
 }
 
 export interface TaskComment {
@@ -47,15 +48,17 @@ export interface TaskFormData {
     image_url?: string;
     due_date: string; // เพิ่มฟิลด์นี้
     priority: 'High' | 'Medium' | 'Low';
+    existingImageUrl?: string;
 }
 
 export interface TaskFormProps {
-    initialData?: Partial<TaskFormData>;
+    initialData?: TaskFormData;
     projects: Project[];
     onSubmit: (data: TaskFormData) => void;
     loading: boolean;
     onAddProject?: (name: string) => Promise<string | null | undefined>;
     onDeleteProject?: (id: string) => Promise<boolean>;
+    isEditMode?: boolean;
 }
 
 export interface TaskStatusCardProps {
