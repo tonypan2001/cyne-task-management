@@ -96,4 +96,33 @@ export const taskService = {
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) throw error;
   },
+
+  // ✨ 7. ดึงเฉพาะงานที่เสร็จแล้วใน Workspace
+  getCompletedTasksByWorkspace: async (workspaceId: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("is_completed", true) // เปลี่ยนกลับมาใช้ is_completed ตามโครงสร้างเดิม
+      .order("created_at", { ascending: false }); // เปลี่ยนกลับมาใช้ created_at
+
+    if (error) throw error;
+    return data as Task[];
+  },
+
+  // ✨ 8. อัปเดตสถานะงาน (เช่น Restore กลับไป In Progress)
+  updateTaskStatus: async (taskId: string) => {
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        // status: newStatus, // 💡 Ray ขอคอมเมนต์บรรทัดนี้ปิดไว้ก่อนนะคะ ป้องกัน Error กรณีไม่มีคอลัมน์นี้ใน DB
+        is_completed: false, // ✨ สั่งให้สถานะ "เสร็จสิ้น" กลับไปเป็น "ยังไม่เสร็จ"
+      })
+      .eq("id", taskId);
+
+    if (error) throw error;
+  },
 };
