@@ -50,4 +50,18 @@ export const workspaceService = {
 
     if (error) throw error;
   },
+
+  // ✨ 5. เปลี่ยนชื่อ Workspace
+  renameWorkspace: async (workspaceId: string, newName: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("workspaces")
+      .update({ name: newName })
+      .eq("id", workspaceId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Workspace;
+  },
 };
