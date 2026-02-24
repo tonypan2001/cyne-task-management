@@ -125,4 +125,67 @@ export const taskService = {
 
     if (error) throw error;
   },
+
+  // ... ฟังก์ชันเดิมที่มีอยู่
+
+  // ✨ 9. ดึงงานย่อยทั้งหมดของ Task
+  getSubTasks: async (taskId: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("sub_tasks")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("created_at");
+
+    if (error) throw error;
+    return data;
+  },
+
+  // ✨ 10. อัปเดตสถานะงานย่อย (Sub-task)
+  updateSubTaskStatus: async (subTaskId: string, isCompleted: boolean) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("sub_tasks")
+      .update({ is_completed: isCompleted })
+      .eq("id", subTaskId);
+
+    if (error) throw error;
+  },
+
+  // ✨ 11. ดึงคอมเมนต์ทั้งหมดของ Task
+  getTaskComments: async (taskId: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("task_comments")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  // ✨ 12. เพิ่มคอมเมนต์ใหม่
+  addTaskComment: async (taskId: string, userId: string, content: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("task_comments")
+      .insert({ task_id: taskId, user_id: userId, content })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // ✨ 13. สลับสถานะงานหลัก (เสร็จ / ไม่เสร็จ)
+  toggleTaskCompletion: async (taskId: string, isCompleted: boolean) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("tasks")
+      .update({ is_completed: isCompleted })
+      .eq("id", taskId);
+
+    if (error) throw error;
+  },
 };
