@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, LogIn, UserPlus, Loader2, Layout } from "lucide-react";
+import { Mail, Lock, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import { authService } from "@/services/authService";
 // ✨ Import PostgrestError กรณีต้องการดัก Error โค้ดจาก Supabase (ถ้ามี)
 import { AuthError } from "@supabase/supabase-js";
+import { Logo } from "@/components/shared/Logo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -73,8 +74,11 @@ export default function AuthPage() {
       <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-10">
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex bg-blue-600 p-3 rounded-2xl text-white mb-4 shadow-lg shadow-blue-100">
+          {/* <div className="inline-flex bg-blue-600 p-3 rounded-2xl text-white mb-4 shadow-lg shadow-blue-100">
             <Layout size={32} />
+          </div> */}
+          <div className="flex justify-center mb-6 drop-shadow-xl">
+            <Logo className="w-20 h-20" />
           </div>
           <h1 className="text-2xl font-black italic tracking-tight">
             {isSignUp ? "สร้างบัญชีใหม่" : "ยินดีต้อนรับกลับมา"}

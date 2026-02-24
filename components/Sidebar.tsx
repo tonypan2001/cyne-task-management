@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { LogOut, Layout as LogoIcon } from 'lucide-react'
 import { useAdmin } from '@/hook/useAdmin'
 import { menuItems } from '@/constants/menu'
+import { Logo } from './shared/Logo'
 
 export default function Sidebar() {
     const pathname = usePathname()
@@ -45,9 +46,10 @@ export default function Sidebar() {
         <aside className="w-64 h-screen bg-white border-r border-slate-100 flex flex-col fixed left-0 top-0 z-20 font-sans">
             {/* Logo Section */}
             <div className="p-8 flex items-center gap-3">
-                <div className="bg-slate-900 p-2.5 rounded-2xl text-white shadow-xl shadow-slate-200">
-                    <LogoIcon size={22} strokeWidth={2.5} />
-                </div>
+                {/* <div className="bg-slate-900 p-2.5 rounded-2xl text-white shadow-xl shadow-slate-200"> */}
+                    {/* <LogoIcon size={22} strokeWidth={2.5} /> */}
+                {/* </div> */}
+                <Logo className="w-8 h-8" />
                 <span className="text-xl font-black tracking-tighter text-slate-900 italic uppercase">
                     Cyne<span className="text-blue-600">.</span>
                 </span>
