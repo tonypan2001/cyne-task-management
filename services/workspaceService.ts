@@ -26,4 +26,28 @@ export const workspaceService = {
     if (error) throw error;
     return data as Workspace;
   },
+
+  // ✨ 3. ดึงข้อมูล Workspace ตาม ID
+  getWorkspaceById: async (workspaceId: string) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("id", workspaceId)
+      .single();
+
+    if (error) throw error;
+    return data as Workspace;
+  },
+
+  // ✨ 4. ลบ Workspace
+  deleteWorkspace: async (workspaceId: string) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("workspaces")
+      .delete()
+      .eq("id", workspaceId);
+
+    if (error) throw error;
+  },
 };
