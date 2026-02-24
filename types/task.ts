@@ -61,6 +61,11 @@ export interface TaskFormProps {
     isEditMode?: boolean;
 }
 
+export interface TaskCardProps {
+    task: Task;
+    projects: Project[];
+}
+
 export interface TaskStatusCardProps {
     isCompleted: boolean;
     progress: number;
