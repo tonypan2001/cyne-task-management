@@ -2,16 +2,56 @@ import { createClient } from '@/lib/supabase'
 import { Project } from '@/types/task'
 
 export const projectService = {
-    // ดึงโปรเจกต์ทั้งหมดใน Workspace
+    // 1. ดึงโปรเจกต์ทั้งหมดใน Workspace
     getProjectsByWorkspace: async (workspaceId: string) => {
         const supabase = createClient()
         const { data, error } = await supabase
             .from('projects')
-            .select('*')
+            .select('id, name')
             .eq('workspace_id', workspaceId)
             .order('name')
 
         if (error) throw error
         return data as Project[]
+    },
+
+    // 2. สร้างโปรเจกต์ใหม่
+    createProject: async (name: string, userId: string, workspaceId: string) => {
+        const supabase = createClient()
+        const { data, error } = await supabase
+            .from('projects')
+            .insert({
+                name,
+                user_id: userId,
+                workspace_id: workspaceId
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+        return data as Project
+    },
+
+    // 3. เช็คจำนวนงานที่อยู่ในโปรเจกต์ (ใช้ตรวจสอบก่อนลบ)
+    checkTasksCountInProject: async (projectId: string) => {
+        const supabase = createClient()
+        const { count, error } = await supabase
+            .from('tasks')
+            .select('*', { count: 'exact', head: true })
+            .eq('project_id', projectId)
+
+        if (error) throw error
+        return count || 0
+    },
+
+    // 4. ลบโปรเจกต์
+    deleteProject: async (projectId: string) => {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('projects')
+            .delete()
+            .eq('id', projectId)
+
+        if (error) throw error
     }
 }
