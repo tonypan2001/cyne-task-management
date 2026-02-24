@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { Briefcase, Plus, LayoutGrid, Loader2, ArrowRight } from "lucide-react";
 import { Workspace } from "@/types/task";
 import { useToast } from "@/components/shared/ToastProvider";
-import { workspaceService } from "@/services/workspaceService"; // ✨ Import Service
+import { workspaceService } from "@/services/workspaceService";
 
 export default function WorkspaceSelectionPage() {
   const supabase = createClient();
@@ -23,7 +23,6 @@ export default function WorkspaceSelectionPage() {
 
   const fetchWorkspaces = useCallback(async () => {
     try {
-      // ✨ ใช้ Service ดึงข้อมูล Workspace
       const data = await workspaceService.getWorkspaces();
       setWorkspaces(data);
     } catch (_) {
@@ -46,7 +45,6 @@ export default function WorkspaceSelectionPage() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Unauthorized");
 
-      // ✨ ใช้ Service สร้าง Workspace ใหม่
       const newWorkspace = await workspaceService.createWorkspace(
         newWorkspaceName.trim(),
         userData.user.id,
@@ -57,7 +55,8 @@ export default function WorkspaceSelectionPage() {
       setIsModalOpen(false);
       showToast("Success", "success", "สร้างพื้นที่ทำงานใหม่เรียบร้อยแล้ว");
     } catch (_) {
-      if (_) showToast("Creation Failed", "error", "ไม่สามารถสร้าง Workspace ได้");
+      if (_)
+        showToast("Creation Failed", "error", "ไม่สามารถสร้าง Workspace ได้");
     } finally {
       setIsCreating(false);
     }
@@ -80,17 +79,19 @@ export default function WorkspaceSelectionPage() {
   }
 
   return (
-    // ✨ ปรับแก้ Background ให้อยู่ใน Wrapper หลัก และใช้สี gradient ที่นุ่มนวลขึ้นครอบคลุมเต็มพื้นที่
-    <div className="min-h-screen bg-linear-to-b from-blue-50 via-slate-50 to-slate-50 flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-      {/* ✨ ตกแต่ง Background ด้วยวงกลมเบลอๆ เพิ่มความสวยงามสไตล์ Modern */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-100/40 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-100/30 rounded-full blur-[100px] pointer-events-none" />
+    // ✨ ใช้ min-h-screen และ w-full เพื่อให้คลุมพื้นที่หลัก
+    <div className="relative min-h-screen w-full bg-slate-50 flex flex-col items-center justify-center p-6 sm:p-12 overflow-hidden">
+      {/* ✨ แก้ปัญหาขอบตัด: ใช้ fixed inset-0 และ bg-gradient-to-b คลุม 100% ทุกมุมจอ */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute inset-0 bg-linear-to-b from-blue-50/80 via-slate-50 to-slate-50" />
+        {/* แสงสีฟ้าฟุ้งๆ ตรงกลางด้านบน */}
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-blue-100/50 rounded-full blur-[120px]" />
+      </div>
 
       <div className="w-full max-w-5xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">
-          <div className="w-16 h-16 bg-blue-600 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-blue-200 mb-6 relative overflow-hidden">
-            {/* เอฟเฟกต์สะท้อนแสงบนโลโก้ */}
+          <div className="w-16 h-16 bg-blue-600 text-white rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-blue-200 mb-6 relative overflow-hidden group">
             <div className="absolute inset-0 bg-linear-to-tr from-white/0 via-white/30 to-white/0 -translate-x-full group-hover:animate-shimmer" />
             <LayoutGrid size={28} strokeWidth={2.5} />
           </div>
@@ -108,7 +109,7 @@ export default function WorkspaceSelectionPage() {
             <button
               key={ws.id}
               onClick={() => handleSelectWorkspace(ws.id)}
-              className="group text-left bg-white/80 backdrop-blur-sm p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 hover:border-blue-200 transition-all duration-300 flex flex-col h-64 relative overflow-hidden"
+              className="group text-left bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 hover:border-blue-200 transition-all duration-300 flex flex-col h-64 relative overflow-hidden"
             >
               <div className="w-12 h-12 bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white rounded-2xl flex items-center justify-center transition-colors mb-auto shadow-inner">
                 <Briefcase size={20} />
@@ -128,7 +129,7 @@ export default function WorkspaceSelectionPage() {
           {/* Create New Card */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-slate-100/30 backdrop-blur-sm border-2 border-dashed border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center justify-center h-64 hover:bg-white hover:border-blue-300 hover:shadow-xl transition-all duration-300 group text-center"
+            className="bg-slate-100/30 backdrop-blur-md border-2 border-dashed border-slate-200 p-8 rounded-[2.5rem] flex flex-col items-center justify-center h-64 hover:bg-white hover:border-blue-300 hover:shadow-xl transition-all duration-300 group text-center"
           >
             <div className="w-12 h-12 bg-white text-slate-300 group-hover:text-blue-600 rounded-2xl flex items-center justify-center shadow-sm mb-4 transition-colors">
               <Plus size={24} strokeWidth={3} />
