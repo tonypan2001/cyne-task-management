@@ -14,6 +14,8 @@ import { WeeklyCalendar } from '@/components/task/WeeklyCalendar'
 import { MonthlyGoals } from '@/components/dashboard/MonthlyGoals'
 import { OverdueSection } from '@/components/dashboard/OverdueSection'
 import { useAdmin } from '@/hook/useAdmin'
+import { taskService } from '@/services/taskService'
+import { projectService } from '@/services/projectService'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -58,14 +60,14 @@ export default function DashboardPage() {
             router.push('/workspaces')
             return
         }
-        const [tRes, pRes] = await Promise.all([
-          // ✨ 4. เติม .eq('workspace_id', workspaceId) เพื่อกรองข้อมูลให้ตรงกับพื้นที่ทำงาน
-          supabase.from('tasks').select('*').eq('workspace_id', workspaceId).order('created_at', { ascending: false }),
-          supabase.from('projects').select('*').eq('workspace_id', workspaceId).order('name')
+        const [tasksData, projectsData] = await Promise.all([
+          taskService.getTasksByWorkspace(workspaceId),
+          projectService.getProjectsByWorkspace(workspaceId)
         ])
 
-        if (tRes.data) setTasks(tRes.data as Task[])
-        if (pRes.data) setProjects(pRes.data as Project[])
+        if (tasksData) setTasks(tasksData);
+        if (projectsData) setProjects(projectsData);
+
       } catch (err) {
         console.error('Error loading dashboard:', err)
       } finally {
