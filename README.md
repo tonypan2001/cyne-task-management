@@ -2,7 +2,9 @@
 
 Cyne (Cynetask) is a modern, fast, and collaborative task management application built with Next.js and Supabase. It allows teams to organize tasks, manage granular permissions, and track progress across multiple workspaces seamlessly.
 
-![Cyne Dashboard](link-to-your-dashboard-screenshot.png)
+<img width="1792" height="1069" alt="Screenshot 2569-03-10 at 16 58 37" src="https://github.com/user-attachments/assets/39b588b6-0414-4fe0-a634-e8eccb360312" />
+
+<img width="1792" height="1069" alt="Screenshot 2569-03-10 at 17 01 47" src="https://github.com/user-attachments/assets/b8013b5c-c8b4-4dec-9c99-7950235502a9" />
 
 ## ✨ Key Features
 
@@ -65,4 +67,4 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 **Prompan Uechanwech (Pan)**
 * Frontend Developer
-* GitHub: [@your-username](https://github.com/your-username)
+* GitHub: [@tonypan2001](https://github.com/tonypan2001)
