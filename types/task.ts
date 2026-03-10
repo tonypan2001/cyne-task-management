@@ -52,6 +52,7 @@ export interface TaskFormData {
 }
 
 export interface TaskFormProps {
+    workspaceId: string;
     initialData?: TaskFormData;
     projects: Project[];
     onSubmit: (data: TaskFormData) => void;

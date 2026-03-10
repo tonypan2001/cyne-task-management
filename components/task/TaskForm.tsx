@@ -2,15 +2,17 @@
 
 import { useState, ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import {
-    Plus, UserPlus, Camera, X, Circle,
+    Plus, Camera, X, Circle,
     Briefcase, Loader2, Calendar as CalendarIcon, Trash2, CheckCircle2
 } from 'lucide-react'
 import NextImage from 'next/image'
 import { TaskFormProps } from '@/types/task'
-import { useToast } from '@/components/shared/ToastProvider' // ✨ นำเข้า Toast 
+import { useToast } from '@/components/shared/ToastProvider' 
+// ✨ นำเข้า AssigneeDropdown ที่เราเพิ่งสร้าง
+import { AssigneeDropdown } from '@/components/shared/AssigneeDropdown'
 
-export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDeleteProject, loading }: TaskFormProps) => {
-    const { showToast } = useToast() // ✨ เรียกใช้ระบบแจ้งเตือน
+export const TaskForm = ({ workspaceId, initialData, projects, onSubmit, onAddProject, onDeleteProject, loading }: TaskFormProps) => {
+    const { showToast } = useToast()
 
     // --- States ---
     const [title, setTitle] = useState(initialData?.title || '')
@@ -39,12 +41,10 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
         }
     }
 
-    // ✨ แก้ไขจุดนี้: ตัด confirm() ออก และส่งต่อไปให้หน้าหลักจัดการผ่าน Modal 
     const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
         e.stopPropagation()
         if (onDeleteProject) {
             const success = await onDeleteProject(projectId)
-            // ถ้าลบสำเร็จ (ผ่าน Modal ในหน้าหลัก) และตรงกับที่เลือกอยู่ ให้ล้างค่าที่เลือก
             if (success && selectedProjectId === projectId) {
                 setSelectedProjectId('')
             }
@@ -76,7 +76,6 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
 
-        // ✨ เปลี่ยนจาก alert() เป็น showToast() 
         if (!selectedProjectId) {
             showToast('Missing Info', 'warning', 'กรุณาเลือกโปรเจกต์ก่อนดำเนินการนะ')
             return
@@ -127,7 +126,7 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                             </button>
                             <button
                                 type="button"
-                                onClick={(e) => handleDeleteProject(e, p.id)} // ✨ ส่งแค่ id ไปให้หน้าหลัก
+                                onClick={(e) => handleDeleteProject(e, p.id)}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                             >
                                 <Trash2 size={12} />
@@ -201,18 +200,14 @@ export const TaskForm = ({ initialData, projects, onSubmit, onAddProject, onDele
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100/50 group hover:border-blue-200 transition-all">
-                        <UserPlus size={18} className="text-slate-400" />
-                        <div className="flex flex-col flex-1">
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Assignee</span>
-                            <input
-                                type="text"
-                                placeholder="Assign to..."
-                                className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-700 outline-none"
-                                value={assigneeName}
-                                onChange={e => setAssigneeName(e.target.value)}
-                            />
-                        </div>
+                    {/* ✨ ส่วนของ AssigneeDropdown ที่เสียบเข้าไปแทน Input เดิม */}
+                    <div className="flex flex-col justify-center gap-2">
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest ml-1">Assignee</span>
+                        <AssigneeDropdown 
+                            workspaceId={workspaceId} 
+                            value={assigneeName} 
+                            onChange={(name) => setAssigneeName(name || '')} 
+                        />
                     </div>
                 </div>
 

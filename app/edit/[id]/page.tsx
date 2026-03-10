@@ -210,6 +210,7 @@ export default function EditTaskPage() {
       {/* Render Form เมื่อโหลดข้อมูล InitialData เสร็จเท่านั้น */}
       {initialData && (
         <TaskForm
+          workspaceId={workspaceId!}
           initialData={initialData}
           projects={projects}
           onSubmit={handleUpdateTask}
