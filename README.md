@@ -19,6 +19,64 @@ Cyne (Cynetask) is a modern, fast, and collaborative task management application
 * **📊 Dynamic Dashboard:** Weekly agenda views, urgent task highlights, and interactive task cards.
 * **🔒 Secure Authentication:** Powered by Supabase Auth with Row Level Security (RLS) to ensure data privacy.
 
+## 📊 System Use Case Diagram
+
+Here is a high-level overview of the user roles and their permissions within a workspace:
+
+```mermaid
+flowchart LR
+    %% Actors
+    Owner([👑 Workspace Owner])
+    Member([👤 Workspace Member])
+
+    %% System Boundary
+    subgraph Cyne Application
+        direction TB
+        
+        subgraph Workspace Management
+            CreateWS(Create Workspace)
+            DeleteWS(Delete Workspace)
+            SwitchWS(Switch Workspace)
+            RenameWS(Rename Workspace)
+        end
+        
+        subgraph Team Management
+            ManagePerm(Manage Permissions)
+            RemoveMem(Remove Member)
+            InviteMem(Invite New Member)
+        end
+        
+        subgraph Task Management
+            CreateTask(Create Task & Subtasks)
+            AssignTask(Assign Members)
+            UpdateStatus(Update Task Status)
+        end
+    end
+
+    %% Owner Relationships (Full Access)
+    Owner ---> CreateWS
+    Owner ---> DeleteWS
+    Owner ---> SwitchWS
+    Owner ---> RenameWS
+    Owner ---> ManagePerm
+    Owner ---> RemoveMem
+    Owner ---> InviteMem
+    Owner ---> CreateTask
+    Owner ---> AssignTask
+    Owner ---> UpdateStatus
+
+    %% Member Relationships (Restricted Access)
+    Member ---> SwitchWS
+    Member -.->|If can_invite = true| InviteMem
+    Member -.->|If can_create_task = true| CreateTask
+    Member ---> AssignTask
+    Member ---> UpdateStatus
+    
+    classDef default fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#334155;
+    classDef actor fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af,font-weight:bold;
+    class Owner,Member actor;
+```
+
 ## 🛠️ Tech Stack
 
 * **Framework:** [Next.js (App Router)](https://nextjs.org/)
